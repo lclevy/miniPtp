@@ -1,0 +1,43 @@
+{
+  operations_codes : {
+    0x1001 : 'PTP_GetDeviceInfo',
+    0x1002 : 'PTP_OpenSession',
+    0x1003 : 'PTP_CloseSession',
+    0x1004 : 'PTP_GetStorageIDs',
+    0x1005 : 'PTP_GetStorageInfo',
+    0x1006 : 'PTP_GetNumObjects',
+    0x1007 : 'PTP_GetObjectHandles',
+    0x1008 : 'PTP_GetObjectInfo',
+    0x1009 : 'PTP_GetObject',
+    0x100a : 'PTP_GetThumb',
+    0x100b : 'PTP_DeleteObject',
+    0x100c : 'PTP_SendObjectInfo',
+    0x100d : 'PTP_SendObject',
+    0x100f : 'PTP_FormatStore',
+    0x1014 : 'PTP_GetDevicePropDesc',
+    0x1016 : 'PTP_SetDevicePropValue',
+    0x101b : 'PTP_GetPartialObject',
+    0x9033 : 'Canon_GetMacAddress',
+    0x9050 : 'Canon_EnableCommand',
+    0x9052 : 'Canon_SendMessage',
+    0x9053 : 'Canon_ProcReturnData',    
+    0x9057 : 'Canon_IsEventProcRunning',
+    0x9113 : 'Canon_GetRemoteMode',
+    0x9114 : 'Canon_SetRemoteMode',
+    0x9115 : 'Canon_SetEventMode',
+    0x9116 : 'Canon_GetEvent',
+    0x9801 : 'MTP_GetObjectPropsSupported',
+    0x9802 : 'MTP_GetObjectPropDesc',
+    0x9805 : 'MTP_GetObjectPropsList'
+  },
+  response_code : {
+    0x2001 : 'OK'
+  },
+  property_codes : {
+      0x5001 : 'BatteryLevel',
+      0xd303 : 'UsedDeviceState', 
+      0xd402 : 'DeviceFriendlyName',
+      0xd406 : 'SessionInitiatorVersionInfo',
+      0xd407 : 'PerceivedDeviceType'
+  }
+}
