@@ -12,7 +12,7 @@ Tested with:
 - Python 3.10 and Python 3.8
 - Windows 10 + libusb-win ("libusb-win32 filter" installed with Zadig)
 - Ubuntu 20.10
-- Canon R6 and Ixux 180 (Elph 190)
+- Canon R6 and Ixus 180 (Elph 190)
 
 ## Requirements
 
@@ -21,7 +21,7 @@ Tested with:
 ## Features
 
 - list supported operations and properties
-- list storages and files/handler
+- list storages and files/handlers
 - allow to get a file (object) using his handler 
 
 ## Syntax
@@ -71,6 +71,13 @@ idProduct=0x32f5
 0
 {'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 0, 'free_space_bytes': 0, 'free_space_objects': 4294967295, 'storage_description': 'SD2', 'volume_identifier': ''}
 
+```
+to get file 2U4A3384.CR3:
+```
+>python miniPtp.py -g 5190d381
+...
+transfering 2U4A3384.CR3 (18202710 bytes)...
+done
 ```
 ## Limitations 
 
