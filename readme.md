@@ -16,7 +16,7 @@ Tested with:
 
 ## Requirements
 
-- PyUSB 1.2.1
+- PyUSB 1.2.1, pyyaml
 
 ## Features
 
@@ -72,7 +72,7 @@ idProduct=0x32f5
 {'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 0, 'free_space_bytes': 0, 'free_space_objects': 4294967295, 'storage_description': 'SD2', 'volume_identifier': ''}
 
 ```
-## Limitations (a lot, because it is mini :-)
+## Limitations 
 
 - Only USB transport yet, but designed with IP as possible extension
 - Tested with Canon R6
@@ -88,7 +88,7 @@ idProduct=0x32f5
 - sequoia-ptp : https://github.com/Parrot-Developers/sequoia-ptpy (no maintenance, very complete)
 - PTP/IP 
   - DPReview, press release by Nikon (2004) : https://www.dpreview.com/articles/9871487277/nikonptpip
-  - Pptip : https://github.com/mmattes/ptpip (Python, implemented and tested with Nikon D5300)
+  - Ptpip : https://github.com/mmattes/ptpip (Python, implemented and tested with Nikon D5300)
   - PTP/IP documentation : http://gphoto.org/doc/ptpip.php
 
 
