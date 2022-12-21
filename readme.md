@@ -1,6 +1,6 @@
 # miniPtp.py
 
-version 27nov2022
+version 22dec2022
 
 A minimal Python PTP implementation to talk to your Camera.
 
@@ -50,6 +50,9 @@ idProduct=0x32f5
 0x5001/BatteryLevel 0xd303/UsedDeviceState 0xd402/DeviceFriendlyName 0xd406/SessionInitiatorVersionInfo 0xd407/PerceivedDeviceType
 + Model= Canon EOS R6
 + Device_version= 3-1.5.0
++ Model_id: 0x80000453
+LensName b'RF24-105mm F4 L IS USM'
+hostname b'EOSR6_xxxxxx'
 + Mac_addr b'74bfc0xxxxxx'
 {'property_code': 20481, 'datatype': 2, 'get_set': 0, 'default': 63, 'current': 63, 'form': 2}
 {'property_code': 54019, 'datatype': 2, 'get_set': 0, 'default': 1, 'current': 1, 'form': 0}
@@ -79,23 +82,58 @@ to get file 2U4A3384.CR3:
 transfering 2U4A3384.CR3 (18202710 bytes)...
 done
 ```
+
+The transaction function is designed to allow one liner and test easily new code and parameters:
+
+
+```python
+  def transaction(self, code, req_params, data_phase=True, senddata=None):
+    ...
+  return { 'ResponseCode': ptp_header.code, 'Data':bytes(data), 'Parameter':respParams }
+  
+```
+With the following line, you send a request with code 0x9033 and no parameter (the 2nd arg, the empty list). You got back data in the with 'Data' key. 
+```python
+mac_address = self.transaction( 0x9033, [] )['Data'][ptp.S_HEADER.size:]
+```
+In the following example, we open the session with this request which has one parameter, the session id. False means there is no data phase:
+```python
+self.transaction( 0x1002, [ self.session_id ], False )
+```
+In the following, we have got 3 parameters during request, and a list of 1 parameter (type int) inside response (type 3):
+```python
+  def get_num_objects( self, storage_id, object_format=0, association=0xffffffff ):
+    data = self.transaction( 0x1006, [ storage_id, object_format, association ], False )['Parameter'] # all_formats, all_handles
+    return data[0]
+```
+Of course, you can check if 'ResponseCode' is 0x2001 which means transaction worked.
+
+You can also send data during data phase:
+```python
+  def set_prop_device_value( self, prop, value ): 
+    res = self.transaction( 0x1016, [ prop ], senddata=value )
+    #print(res['ResponseCode'])
+```
+
+
 ## Limitations 
 
 - Only USB transport yet, but designed with IP as possible extension
-- Tested with Canon R6
+- Tested with Canon R6 and Canon R6 and Ixus 180 (Elph 190) 
 - Implemented : GetDeviceInfo, OpenSession, CloseSession, GetStorageIDs, GetStorageInfo, GetObjectHandles, GetObjectInfo, GetObject, GetDevicePropDesc and Canon GetMacAddress
 
 
 ## References and inspirations
 
 - MTP 1.1 : https://www.usb.org/sites/default/files/MTPv1_1.zip (official specification)
-- PTP, 2012 : https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/f2012/jmv87/site/files/PTP%20Protocol.pdf
+- Gphoto2 : https://github.com/gphoto/libgphoto2/tree/master/camlibs/ptp2 
 - ptplib : https://github.com/leirf/libptp (the reference, in C)
 - camlib : https://github.com/petabyt/camlib (simple, in C)
+  - canon hacks : https://github.com/petabyt/camlib/blob/master/src/canon.c
 - sequoia-ptp : https://github.com/Parrot-Developers/sequoia-ptpy (no maintenance, very complete)
 - PTP/IP 
   - DPReview, press release by Nikon (2004) : https://www.dpreview.com/articles/9871487277/nikonptpip
-  - Ptpip : https://github.com/mmattes/ptpip (Python, implemented and tested with Nikon D5300)
+  - Ptpip : https://github.com/mmattes/ptpip (Python, implemented and tested with Nikon D5300, 2017)
   - PTP/IP documentation : http://gphoto.org/doc/ptpip.php
 
 

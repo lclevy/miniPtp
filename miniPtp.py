@@ -1,27 +1,36 @@
 '''
 miniPtp.py
-'''
 
-# https://www.usb.org/document-library/media-transfer-protocol-v11-spec-and-mtp-v11-adopters-agreement
+a simple and portable PTP implementation
+
+Laurent Clevy
+'''
 
 import os
 import sys
 import argparse
+from time import sleep
+
 #os.environ['PYUSB_DEBUG'] = 'debug'
+#os.environ['LIBUSB_DEBUG'] = '4'
 import usb.core
 import usb.util
 
-from struct import pack, Struct
+from struct import pack, Struct, unpack
 from binascii import hexlify, unhexlify
 from collections import namedtuple
 import yaml
 
 PTP_CLASS_IMAGE = 6
 
+'''
+USB transport layer
+'''
+
 class usb_tr:
   VENDORID_CANON = 0x04a9
   
-  def __init__(self, vendor = VENDORID_CANON):
+  def __init__(self, vendor = VENDORID_CANON): #default vendor id is Canon
     self.device = None
     self.config = None
     self.interface = None
@@ -33,7 +42,7 @@ class usb_tr:
     devs = usb.core.find( idVendor=vendor ) 
     if devs is None:
       raise ValueError('Device not found')
-    print('idProduct=0x%x' % devs.idProduct)
+    #print('idProduct=0x%x' % devs.idProduct)
     self.device = devs
     self.device.set_configuration()
     
@@ -57,8 +66,6 @@ class ptp:
   S_HEADER = Struct('<LHHL')
   NT_HEADER = namedtuple('ptp_header', 'len type code transaction' )
 
-  S_DEVICE_INFO_HEADER = Struct('<HLH')
-
   OC_GetDeviceInfo = 0x1001 
   OC_OpenSession = 0x1002
 
@@ -72,12 +79,15 @@ class ptp:
     self._transaction = 0
     if 'usb' in trans:
       self.device = usb_tr()
-    else:
+    else: # USB is the only transport supported yet
       return None    
 
-  def build_header( self, size, ptp_type, ptp_code ):
-    return ptp.S_HEADER.pack( size, ptp_type, ptp_code, self._transaction )
+  '''def build_header( self, size, ptp_type, ptp_code ):
+    return ptp.S_HEADER.pack( size, ptp_type, ptp_code, self._transaction )'''
 
+  '''
+  Parsing Functions
+  '''
   def parse_header( data ):
     return ptp.NT_HEADER( *ptp.S_HEADER.unpack_from(data, 0) )
 
@@ -97,6 +107,9 @@ class ptp:
   def parse_array( data, _type ):
     _len = Struct('<L').unpack_from( data, 0)[0]
     return list( Struct('<%d%s' % (_len, _type)).unpack_from( data, 4 ) ), Struct('<L').size + _len*Struct('%s'%_type).size
+
+
+  S_DEVICE_INFO_HEADER = Struct('<HLH')
 
   #section 5.1.1
   def parse_devinfo( data ):
@@ -140,86 +153,6 @@ class ptp:
     ptr += size
         
     return dev_info 
-          
-  def write(self, data):
-    sent = 0  
-    
-    return self.device.out_ep.write( data ) #more then 512 bytes is not tested !!!!
-
-  def read(self):
-    chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
-    data = chunk
-    while len(chunk) == self.device.in_ep.wMaxPacketSize and len(chunk)!=0: #to test = multiple of in_ep.wMaxPacketSize
-      chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
-      data += chunk
-    return data
-
-  def transaction(self, code, params, data_phase=False, senddata=None):
-    #request
-    _len = ptp.S_HEADER.size + len(params)*Struct('<L').size
-    packet = pack( '<L', _len ) + pack('<H', ptp.PACKET_TYPE_COMMAND) + pack('<H', code) + pack('<L', self._transaction)
-    parameters = b''.join( [ pack('<L', p) for p in params ] )
-    l = self.write( packet + parameters)
-    assert l == _len
-
-    if data_phase:
-      if not senddata:
-        data = self.read()
-        ptp_header = ptp.parse_header( data )
-        #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
-        assert ptp_header.len >= ptp.S_HEADER.size
-        '''if ptp_header.code != ptp.RC_OK:
-          print('error %x' % ptp_header.code)
-          return     '''   
-        assert ptp_header.code == code
-        assert ptp_header.transaction == self._transaction   
-      else:
-        packet = pack( '<L', ptp.S_HEADER.size+len(senddata) ) + pack('<H', ptp.PACKET_TYPE_DATA) + pack('<H', code) + pack('<L', self._transaction)
-        #parameters = b''.join( [ pack('<L', p) for p in params ] )
-        l = self.write( packet + senddata )      
-      
-    #response
-    ack = self.read()
-    ptp_header = ptp.parse_header( ack )
-    #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
-    assert ptp_header.len >= ptp.S_HEADER.size
-    assert ptp_header.type == ptp.PACKET_TYPE_RESPONSE
-    assert ptp_header.transaction == self._transaction
-    
-    self._transaction += 1
-
-    if ptp_header.code == ptp.RC_OK: 
-      if data_phase:
-        return data
-      else:
-        return ack[ptp.S_HEADER.size: ]
-    else:
-       print('error %x' % ptp_header.code)
-       return None
-
-  def get_device_info( self ):
-    data = self.transaction( ptp.OC_GetDeviceInfo, [], True )
-    return ptp.parse_devinfo( data ) 
-
-  def open_session( self ):    
-    self.session_id = 1
-    self._transaction = 0
-    
-    self.transaction( ptp.OC_OpenSession, [ self.session_id ] )
-
-  def close_session( self ):    
-    self.session_id = 1
-    self.transaction( 0x1003, [ self.session_id ] )
-  
-  def get_macaddress( self ):
-    data = self.transaction( 0x9033, [], True )
-    return data[ptp.S_HEADER.size:] #return mac address, wifi on R6
-
-  def get_storage_ids( self ):
-    data = self.transaction( 0x1004, [], True )
-
-    _len = Struct('<L').unpack_from(data, ptp.S_HEADER.size)
-    return Struct('<%dL' % _len).unpack_from(data, ptp.S_HEADER.size+Struct('<L').size)
 
 
   S_STORAGE_INFO = Struct('<HHHQQL')
@@ -240,6 +173,7 @@ class ptp:
     storage_info['volume_identifier'], size = ptp.parse_string( data[ptr: ] )
     return storage_info
 
+
   S_OBJECT_INFO = Struct('<LHHLHLLLLLLLHLL')
 
   def parse_object_info( data ):
@@ -258,63 +192,9 @@ class ptp:
     ptr += size
     object_info ['keywords'], size = ptp.parse_string( data[ptr: ] )
     #print(object_info)  
-    return object_info    
+    return object_info   
     
-  def get_storage_info( self, storage_id ):
-    data = self.transaction( 0x1005, [ storage_id ], True )
-    #print(hexlify(data))
-    return ptp.parse_storage_info( data )
-
-  #only on storage ?
-  def get_num_objects( self, storage_id, object_format=0, association=0xffffffff ):
-    data = self.transaction( 0x1006, [ storage_id, object_format, association ] ) # all_formats, all_handles
-    #print(hexlify(data))
-    return Struct('<L').unpack_from( data )[0]
-
-  def get_object_handles( self, storage_id, object_format=0, association=0xffffffff ):
-    data = self.transaction( 0x1007, [ storage_id, object_format, association ], True )
-    #print(hexlify(data[ptp.S_HEADER.size: ]))
-    return ptp.parse_array( data[ptp.S_HEADER.size: ], 'L')[0] #only the list
-
-  def get_object_info( self, handle ): 
-    data = self.transaction( 0x1008, [ handle ], True )
-    #print(hexlify(data))
-    return ptp.parse_object_info( data )
-
-  def get_object( self, handle ): 
-    data = self.transaction( 0x1009, [ handle ], True )
-    return data[ptp.S_HEADER.size: ]
     
-  def send_object_info( self, storage_id ): 
-    data = self.transaction( 0x100c, [ storage_id, 0 ], True )
-    print(hexlify(data))
-
-  def get_device_prop_desc( self, prop ): 
-    data = self.transaction( 0x1014, [ prop ], True )
-    #print(hexlify(data))
-    return ptp.parse_property_desc( data )
-
-  def set_prop_device_value( self, prop, value ): 
-    data = self.transaction( 0x1016, [ prop ], True, senddata=value )
-    print(hexlify(data))
-    #return ptp.parse_property_desc( data )
-    
-  def send_object( self ): #0x100d
-    pass
-
-  def print_obj( h, obj, level ):
-    print('%s%08x %08x %08x %04x %8d %s' % (level*'  ', h, obj['storage_id'], obj['parent_obj'], obj['object_format'], obj['object_compr_size'],obj['filename']) )
-
-  def ls_r( self, storage_id, _handles, level=0 ):
-    for h in _handles:
-      obj = self.get_object_info( h )
-      #print(obj)
-      ptp.print_obj( h, obj, level )
-      if obj['association_type']==1:
-        handles = self.get_object_handles( storage_id, association=h )
-        self.ls_r( storage_id, handles, level+1 )
-
-
   S_DEVICE_PROP_DESC = Struct('<HHB')
   
   def parse_property_desc( data ):
@@ -340,7 +220,165 @@ class ptp:
       return device_prop_desc #ignore end of structure
       
     device_prop_desc['form'] = int(data[ptr])
-    return device_prop_desc
+    return device_prop_desc  
+    
+    
+    
+  '''
+  I/O functions
+  '''
+  
+  def write(self, data):
+    sent = 0  
+    #print(self.device.out_ep.wMaxPacketSize) == 512
+    return self.device.out_ep.write( data ) #more then 512 bytes is not tested !!!!
+
+  def read(self):
+    chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
+    data = chunk
+    while len(chunk) == self.device.in_ep.wMaxPacketSize and len(chunk)!=0: #to test = multiple of in_ep.wMaxPacketSize
+      chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
+      data += chunk
+    return data
+
+  '''
+  PTP transaction
+  '''
+  def transaction(self, code, params, data_phase=True, senddata=None):
+
+    #request
+    if len(params)>0:
+      _len = ptp.S_HEADER.size + len(params)*Struct('<L').size
+    else:
+      _len = ptp.S_HEADER.size
+       
+    packet = pack( '<L', _len ) + pack('<H', ptp.PACKET_TYPE_COMMAND) + pack('<H', code) + pack('<L', self._transaction)
+    parameters = b''.join( [ pack('<L', p) for p in params ] )
+    l = self.write( packet + parameters)
+    assert l == _len
+
+    data = b'' 
+    if data_phase:
+      if not senddata:
+        data = self.read()
+        ptp_header = ptp.parse_header( data )
+        #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
+        assert ptp_header.len >= ptp.S_HEADER.size 
+        assert ptp_header.code == code
+        assert ptp_header.transaction == self._transaction   
+      else:  #senddata      
+        packet = pack( '<L', ptp.S_HEADER.size+len(senddata) ) + pack('<H', ptp.PACKET_TYPE_DATA) + pack('<H', code) + pack('<L', self._transaction)
+        l = self.write( packet + senddata )                 
+    
+    #response
+    response = self.read()
+    ptp_header = ptp.parse_header( response )
+    #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
+    assert ptp_header.len >= ptp.S_HEADER.size
+    assert ptp_header.type == ptp.PACKET_TYPE_RESPONSE
+    assert ptp_header.transaction == self._transaction
+    if ptp_header.len >= ptp.S_HEADER.size: #section 4.7.3 in MTP doc
+      paramLen = (ptp_header.len-ptp.S_HEADER.size) / Struct('<L').size #response parameters
+      respParams = list ( unpack('<%dL' % paramLen, response[ptp.S_HEADER.size:] ) )
+    
+    self._transaction += 1
+
+    return { 'ResponseCode': ptp_header.code, 'Data':bytes(data), 'Parameter':respParams }
+  
+  '''
+  PTP commands
+  '''  
+
+  def get_device_info( self ):
+    data = self.transaction( ptp.OC_GetDeviceInfo, [] )['Data']
+    return ptp.parse_devinfo( data ) 
+
+  def open_session( self ):    
+    self.session_id = 1
+    self._transaction = 0
+    
+    self.transaction( ptp.OC_OpenSession, [ self.session_id ], False )
+
+  def close_session( self ):    
+    self.session_id = 1
+    self.transaction( 0x1003, [ self.session_id ], False )
+  
+  def get_macaddress( self ):
+    data = self.transaction( 0x9033, [] )['Data']
+    return data[ptp.S_HEADER.size:] #return mac address, wifi on R6
+
+  def get_storage_ids( self ):
+    data = self.transaction( 0x1004, [] )['Data']
+
+    _len = Struct('<L').unpack_from(data, ptp.S_HEADER.size)
+    return Struct('<%dL' % _len).unpack_from(data, ptp.S_HEADER.size+Struct('<L').size)
+
+    
+  def get_storage_info( self, storage_id ):
+    data = self.transaction( 0x1005, [ storage_id ], True )['Data']
+    return ptp.parse_storage_info( data )
+
+  #only on storage ?
+  def get_num_objects( self, storage_id, object_format=0, association=0xffffffff ):
+    data = self.transaction( 0x1006, [ storage_id, object_format, association ], False )['Parameter'] # all_formats, all_handles
+    return data[0]
+
+  def get_object_handles( self, storage_id, object_format=0, association=0xffffffff ):
+    data = self.transaction( 0x1007, [ storage_id, object_format, association ], True )['Data']
+    return ptp.parse_array( data[ptp.S_HEADER.size: ], 'L')[0] #only the list
+
+  def get_object_info( self, handle ): 
+    data = self.transaction( 0x1008, [ handle ], True )['Data']
+    return ptp.parse_object_info( data )
+
+  def get_object( self, handle ): 
+    data = self.transaction( 0x1009, [ handle ], True )['Data']
+    return data[ptp.S_HEADER.size: ]
+    
+  def send_object_info( self, storage_id ): 
+    data = self.transaction( 0x100c, [ storage_id, 0 ], True )['Data']
+    print(hexlify(data))
+
+  def get_device_prop_desc( self, prop ): 
+    data = self.transaction( 0x1014, [ prop ], True )['Data']
+    return ptp.parse_property_desc( data )
+
+  def set_prop_device_value( self, prop, value ): 
+    res = self.transaction( 0x1016, [ prop ], senddata=value )
+    #print(res['ResponseCode'])
+
+  def get_events( self ): 
+    self.transaction( 0x9115, [ 1 ], False ) #Canon_SetEventMode
+    data = self.transaction( 0x9116, [ 1 ] )['Data'] #Canon_GetEvent
+    ptr = self.S_HEADER.size
+    
+    size, event_code = Struct('<LL').unpack_from(data, ptr)
+    events = dict()
+    while event_code!=0:
+      size, event_code, property_code = Struct('<LLL').unpack_from(data, ptr)
+      if event_code not in events:
+        events[event_code] = dict()     
+      events[event_code][property_code] = (size, event_code, property_code, bytes(data[ptr+12:ptr+size]) )
+      #print('%x %x %x %s' % (size, event_code, property_code, bytes(data[ptr+12:ptr+size])) )
+      ptr += size
+      size, event_code = Struct('<LL').unpack_from(data, ptr)
+    return events
+    
+  def send_object( self ): #0x100d
+    pass
+
+  def print_obj( h, obj, level ):
+    print('%s%08x %08x %08x %04x %8d %s' % (level*'  ', h, obj['storage_id'], obj['parent_obj'], obj['object_format'], obj['object_compr_size'],obj['filename']) )
+
+  def ls_r( self, storage_id, _handles, level=0 ):
+    for h in _handles:
+      obj = self.get_object_info( h )
+      #print(obj)
+      ptp.print_obj( h, obj, level )
+      if obj['association_type']==1:
+        handles = self.get_object_handles( storage_id, association=h )
+        self.ls_r( storage_id, handles, level+1 )
+
       
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -363,7 +401,7 @@ if __name__ == "__main__":
   #print(ptp_obj.device.device)
 
   dev_info = ptp_obj.get_device_info() 
-  
+
   if args.list_operations:
     print('+ operations_supported')
     for op in sorted(dev_info['operations_supported']):
@@ -385,12 +423,17 @@ if __name__ == "__main__":
   print( '+ Device_version=', dev_info['device_version'] )
 
   #print(dev_info)
-  #buggy
-  #print(hexlify('/Windows/10.0.19045 MTPClassDriver/10.0.19041.0\x00'.encode('UTF-16LE')))
-  #ptp_obj.set_prop_device_value( 0xd406, b'/'+'Windows/10.0.19045 MTPClassDriver/10.0.19041.0\x00'.encode('UTF-16LE') )
   
   ptp_obj.open_session()
 
+  #ptp_obj.transaction( 0x9114, [ 1 ], False ) #Canon_SetRemoteMode
+  events = ptp_obj.get_events()
+  print('+ Model_id: 0x%x' % unpack('<L', events[0xc189][0xd116][3] ) )
+  if 0xd1d8 in events[0xc189]: print('LensName', events[0xc189][0xd1d8][3] ) #LensName
+  if 0xd125 in events[0xc189]: print('hostname', events[0xc189][0xd125][3] ) #hostname
+
+  ptp_obj.set_prop_device_value( 0xd406, b'/'+'Windows/10.0.19045 MTPClassDriver/10.0.19041.0\x00'.encode('UTF-16LE') )
+    
   if 0x9033 in dev_info['operations_supported']: #GetMacAddress
     mac_addr = ptp_obj.get_macaddress()
     print('+ Mac_addr', hexlify(mac_addr))
