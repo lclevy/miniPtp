@@ -227,11 +227,13 @@ class ptp:
   '''
   I/O functions
   '''
-  
   def write(self, data):
-    sent = 0  
-    #print(self.device.out_ep.wMaxPacketSize) == 512
-    return self.device.out_ep.write( data ) #more then 512 bytes is not tested !!!!
+    total_sent = 0  
+    while total_sent < len(data):
+      sent = self.device.out_ep.write( data[total_sent:] )
+      total_sent += sent
+      #print('sent %x' % sent )
+    return total_sent
 
   def read(self):
     chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
@@ -387,6 +389,8 @@ if __name__ == "__main__":
   parser.add_argument("-i", "--info", help="show device info", action="store_true")
   parser.add_argument("-L", "--list-files", help="list all files", action="store_true")
   parser.add_argument("-g", "--get-file", help="get file by given handler", dest="handler")
+  parser.add_argument("-u", "--upload", help="upload file. storage,parent,filename", dest="upload")
+
   args = parser.parse_args()
     
   #init module
@@ -433,7 +437,26 @@ if __name__ == "__main__":
   if 0xd125 in events[0xc189]: print('hostname', events[0xc189][0xd125][3] ) #hostname
 
   ptp_obj.set_prop_device_value( 0xd406, b'/'+'Windows/10.0.19045 MTPClassDriver/10.0.19041.0\x00'.encode('UTF-16LE') )
-    
+  
+  '''
+  # PTP_SetObjectProtection
+  r = ptp_obj.transaction( 0x1012, [ 0x01a0aee1, 0 ], False ) #[handle, new_protection]. 0 = no protection, 1 = read only. Worked on Ixus 180
+  print( r, r['ResponseCode']==0x2001 )
+  '''
+  if args.upload: #-u 0x00010001,0x80000,ssdp.txt
+    s, p, filename = args.upload.split(',')
+    storage = int(s, 16)
+    parent = int(p, 16)
+    print('Try to upload', filename, 'on storage 0x%x' % storage, 'with parent 0x%x' % parent)   
+    # PTP_SendObjectInfo
+    obj_data = open(filename, 'rb').read()
+    obj_info = ptp.S_OBJECT_INFO.pack( storage, 0x3801, 0, len(obj_data), 0, 0, 0, 0, 0, 0, 0, parent, 0, 0, 0) + filename.encode('UTF-16LE')+'\x00'.encode('UTF-16LE') + 3*b'\x00'
+    #print(hexlify(obj_info))   
+    r = ptp_obj.transaction( 0x100c, [ storage, parent  ], senddata=obj_info ) #[storage, dest_dir_handle]
+    if r['ResponseCode']==0x200f:
+      print('Access denied') #access denied on Ixus 180, like with gphoto2
+    #after we should use SendObject  
+  
   if 0x9033 in dev_info['operations_supported']: #GetMacAddress
     mac_addr = ptp_obj.get_macaddress()
     print('+ Mac_addr', hexlify(mac_addr))

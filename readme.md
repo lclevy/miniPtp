@@ -1,6 +1,6 @@
 # miniPtp.py
 
-version 22dec2022
+version 28dec2022
 
 A minimal Python PTP implementation to talk to your Camera.
 
@@ -40,7 +40,7 @@ options:
   -g HANDLER, --get-file HANDLER
                         get file by given handler
 ```
-## Example
+## miniPtp.py example
 ```
 >python miniPtp.py -poiL
 idProduct=0x32f5
@@ -83,7 +83,9 @@ transfering 2U4A3384.CR3 (18202710 bytes)...
 done
 ```
 
-The transaction function is designed to allow one liner and test easily new code and parameters:
+## Transaction API
+
+The transaction function is designed to allow one liners and test easily new code and parameters:
 
 
 ```python
@@ -115,11 +117,57 @@ You can also send data during data phase:
     #print(res['ResponseCode'])
 ```
 
+## miniPtp as library
+
+You can use use miniPtp as a library by importing ptp. In the example below (see [update_canon.py](update_canon.py)), you can send a firmware update file to you EOS camera using PTP/USB:
+``` python
+# update_canon.py
+# python update.py filepath/EOSR6150.FIR
+
+import sys
+import os
+from binascii import hexlify
+
+from miniPtp import ptp
+
+try:
+  ptp_obj = ptp()
+except ValueError as e:
+  print(e)
+  sys.exit()  
+
+dev_info = ptp_obj.get_device_info() 
+
+if 0x911f in dev_info['operations_supported']: #0x911f is EOS_UpdateFirmware
+  print('Update operation is supported')
+  
+  ptp_obj.open_session()
+
+  PTP_DATA_LEN = 0x200000 
+  FILENAME_LEN = 32
+  FIRM_CHUNK_LEN = PTP_DATA_LEN - FILENAME_LEN
+    
+  with open(sys.argv[1], 'rb') as firm_f:
+    firm_data = firm_f.read()
+    base_filename = os.path.basename(sys.argv[1])
+    filename = base_filename.encode() + b'\x00'*(FILENAME_LEN - len(base_filename)) #for each transaction, FIR data is prefixed by filename within a 32 bytes field
+
+    sent = 0
+    error = False
+    while sent < len(firm_data) and not error:
+      print('Transaction %d : filename %s, fir length %d, offset %d' % (ptp_obj._transaction, base_filename, len(firm_data), sent) )
+      r = ptp_obj.transaction( 0x911f, [ len(firm_data), sent ], senddata = filename + firm_data[sent:sent+FIRM_CHUNK_LEN] )
+      error = r['ResponseCode'] != 0x2001
+      sent += min(FIRM_CHUNK_LEN, len(firm_data)-sent)
+    print('Done')  
+else:
+  print('Update firmware operation not supported') 
+```
 
 ## Limitations 
 
 - Only USB transport yet, but designed with IP as possible extension
-- Tested with Canon R6 and Canon R6 and Ixus 180 (Elph 190) 
+- Tested with Canon R6 and Ixus 180 (Elph 190) 
 - Implemented : GetDeviceInfo, OpenSession, CloseSession, GetStorageIDs, GetStorageInfo, GetObjectHandles, GetObjectInfo, GetObject, GetDevicePropDesc and Canon GetMacAddress
 
 
