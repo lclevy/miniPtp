@@ -16,19 +16,29 @@
     0x100f : 'PTP_FormatStore',
     0x1012 : 'PTP_SetObjectProtection',
     0x1014 : 'PTP_GetDevicePropDesc',
+    0x1015 : 'PTP_GetDevicePropValue',
     0x1016 : 'PTP_SetDevicePropValue',
+    0x1017 : 'PTP_ResetDevicePropValue',
     0x101b : 'PTP_GetPartialObject',
     
     # Non EOS (Canon point and shoot) operation codes, https://github.com/petabyt/camlib/blob/master/src/ptp.h
     0x9001 : 'Canon_GetPartialObjectInfo', # https://github.com/gphoto/libgphoto2/blob/master/camlibs/ptp2/ptp.h
+    0x9002 : 'Canon_SetObjectArchive',
     0x9004 : 'Canon_LockUI',
     0x9005 : 'Canon_UnlockUI',
+    0x9006 : 'Canon_GetObjectHandleByName',
     0x900B : 'Canon_ViewFinderOn',
     0x900C : 'Canon_ViewFinderOff',
+    0x9013 : 'Canon_CheckEvent',
+    0x9019 : 'Canon_SendPartialObject',
     0x901A : 'Canon_InitCaptureInRAM',
+    0x901B : 'Canon_GetPartialObjectEx',
+    0x901C : 'Canon_SetObjectTime',
     0x901D : 'Canon_GetViewFinderImage',
+    0x901E : 'Canon_GetObjectAttributes',
     
     0x9033 : 'Canon_GetMacAddress', #tested on R6
+    
     0x9050 : 'Canon_InitiateEventProc_50', #https://chdk.setepontos.com/index.php?topic=4338.msg147738#msg147738
     0x9051 : 'Canon_TerminateEventProc_51',
     0x9052 : 'Canon_ExecuteEventProc',
@@ -50,6 +60,8 @@
     0x9115 : 'EOS_SetEventMode',
     0x9116 : 'EOS_GetEvent',
     
+    0x911A : 'EOS_PCHDDCapacity',
+    
     0x911B : 'EOS_SetUILock', #https://github.com/petabyt/camlib/blob/master/src/ptp.h
     0x911C : 'EOS_ResetUILock',
     0x911D : 'EOS_KeepDeviceOn',
@@ -62,8 +74,11 @@
     0x9153 : 'EOS_GetViewFinderData',
     0x9154 : 'EOS_DoAutoFocus',
     
+    0x9189 : 'EOS_GetPictureStylePCFlavorParam',
+    
     0x91FE : 'EOS_FAPIMessageTX',
     0x91FF : 'EOS_FAPIMessageRX',
+    #and https://github.com/reticulatedpines/magiclantern_simplified/blob/3ae7e828d8489ff399f9d7817bb4dc31e84bd6d6/contrib/ptpcam/ptp.h#L115-L252
     
     0x9801 : 'MTP_GetObjectPropsSupported',
     0x9802 : 'MTP_GetObjectPropDesc',
@@ -72,6 +87,7 @@
   response_code : {
     0x2001 : 'OK',
     0x2003 : 'SessionNotOpen',
+    0x2006 : 'ParameterNotSupported',
     0x200f : 'Access denied' #with SendObjectInfo for example
   },
   property_codes : {

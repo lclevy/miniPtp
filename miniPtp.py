@@ -221,9 +221,36 @@ class ptp:
       
     device_prop_desc['form'] = int(data[ptr])
     return device_prop_desc  
+
+  def parse_events( data ):
+    ptr = ptp.S_HEADER.size
     
+    size, event_code = Struct('<LL').unpack_from(data, ptr)
+    events = dict()
+    while event_code!=0:
+      size, event_code, property_code = Struct('<LLL').unpack_from(data, ptr)
+      if event_code not in events:
+        events[event_code] = dict()     
+      events[event_code][property_code] = (size, event_code, property_code, bytes(data[ptr+12:ptr+size]) )
+      #print('%x %x %x %s' % (size, event_code, property_code, bytes(data[ptr+12:ptr+size])) )
+      ptr += size
+      size, event_code = Struct('<LL').unpack_from(data, ptr)
+    return events
+
     
-    
+  def encode_str( s ):
+    if len(s)==0:
+      return b'\x00'
+    else:  
+      return pack('B', len(s)) + s.encode('UTF-16LE')  
+  
+  def zeroterm_str( data ):
+    index = data.find(b'\x00')
+    if index>=0 :
+      return data[:index]
+    else:
+      return data 
+  
   '''
   I/O functions
   '''
@@ -299,7 +326,7 @@ class ptp:
     self.session_id = 1
     self._transaction = 0
     
-    self.transaction( ptp.OC_OpenSession, [ self.session_id ], False )
+    return self.transaction( ptp.OC_OpenSession, [ self.session_id ], False )
 
   def close_session( self ):    
     self.session_id = 1
@@ -336,10 +363,7 @@ class ptp:
   def get_object( self, handle ): 
     data = self.transaction( 0x1009, [ handle ], True )['Data']
     return data[ptp.S_HEADER.size: ]
-    
-  def send_object_info( self, storage_id ): 
-    data = self.transaction( 0x100c, [ storage_id, 0 ], True )['Data']
-    print(hexlify(data))
+
 
   def get_device_prop_desc( self, prop ): 
     data = self.transaction( 0x1014, [ prop ], True )['Data']
@@ -352,22 +376,8 @@ class ptp:
   def get_events( self ): 
     self.transaction( 0x9115, [ 1 ], False ) #Canon_SetEventMode
     data = self.transaction( 0x9116, [ 1 ] )['Data'] #Canon_GetEvent
-    ptr = self.S_HEADER.size
-    
-    size, event_code = Struct('<LL').unpack_from(data, ptr)
-    events = dict()
-    while event_code!=0:
-      size, event_code, property_code = Struct('<LLL').unpack_from(data, ptr)
-      if event_code not in events:
-        events[event_code] = dict()     
-      events[event_code][property_code] = (size, event_code, property_code, bytes(data[ptr+12:ptr+size]) )
-      #print('%x %x %x %s' % (size, event_code, property_code, bytes(data[ptr+12:ptr+size])) )
-      ptr += size
-      size, event_code = Struct('<LL').unpack_from(data, ptr)
-    return events
-    
-  def send_object( self ): #0x100d
-    pass
+    return ptp.parse_events( data )
+   
 
   def print_obj( h, obj, level ):
     print('%s%08x %08x %08x %04x %8d %s' % (level*'  ', h, obj['storage_id'], obj['parent_obj'], obj['object_format'], obj['object_compr_size'],obj['filename']) )
@@ -386,10 +396,11 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("-o", "--list-operations", help="list supported operations", action="store_true")
   parser.add_argument("-p", "--list-properties", help="list supported properties", action="store_true")
+  parser.add_argument("-d", "--list-properties-description", help="list supported properties", action="store_true")
   parser.add_argument("-i", "--info", help="show device info", action="store_true")
   parser.add_argument("-L", "--list-files", help="list all files", action="store_true")
   parser.add_argument("-g", "--get-file", help="get file by given handler", dest="handler")
-  parser.add_argument("-u", "--upload", help="upload file. storage,parent,filename", dest="upload")
+  parser.add_argument("-u", "--upload", help="upload file. storage,filename", dest="upload")
 
   args = parser.parse_args()
     
@@ -428,13 +439,17 @@ if __name__ == "__main__":
 
   #print(dev_info)
   
-  ptp_obj.open_session()
-
+  r = ptp_obj.open_session()
+  if r['ResponseCode']!=ptp.RC_OK:
+    print('error %x' % r['ResponseCode'])
+  else:
+    print('Connected') 
+      
   #ptp_obj.transaction( 0x9114, [ 1 ], False ) #Canon_SetRemoteMode
   events = ptp_obj.get_events()
   print('+ Model_id: 0x%x' % unpack('<L', events[0xc189][0xd116][3] ) )
-  if 0xd1d8 in events[0xc189]: print('LensName', events[0xc189][0xd1d8][3] ) #LensName
-  if 0xd125 in events[0xc189]: print('hostname', events[0xc189][0xd125][3] ) #hostname
+  if 0xd1d8 in events[0xc189]: print('LensName', ptp.zeroterm_str(events[0xc189][0xd1d8][3]) ) #LensName
+  if 0xd125 in events[0xc189]: print('hostname', ptp.zeroterm_str(events[0xc189][0xd125][3]) ) #hostname
 
   ptp_obj.set_prop_device_value( 0xd406, b'/'+'Windows/10.0.19045 MTPClassDriver/10.0.19041.0\x00'.encode('UTF-16LE') )
   
@@ -443,31 +458,44 @@ if __name__ == "__main__":
   r = ptp_obj.transaction( 0x1012, [ 0x01a0aee1, 0 ], False ) #[handle, new_protection]. 0 = no protection, 1 = read only. Worked on Ixus 180
   print( r, r['ResponseCode']==0x2001 )
   '''
-  if args.upload: #-u 0x00010001,0x80000,ssdp.txt
-    s, p, filename = args.upload.split(',')
+
+  if args.upload: #-u 0x00010001,ssdp.txt
+    s, filename = args.upload.split(',')
     storage = int(s, 16)
-    parent = int(p, 16)
-    print('Try to upload', filename, 'on storage 0x%x' % storage, 'with parent 0x%x' % parent)   
-    # PTP_SendObjectInfo
+    parent = 0 # MUST be 0, instead we have error 0x2006 = ParameterNotSupported
+    storage = 0 # optional, can be 0
+    object_format = 0xbf01 # firmware file .FI2, mandatory to avoid 0x200f =  'access denied' !
+    print('Try to upload', filename)   
+
     obj_data = open(filename, 'rb').read()
-    obj_info = ptp.S_OBJECT_INFO.pack( storage, 0x3801, 0, len(obj_data), 0, 0, 0, 0, 0, 0, 0, parent, 0, 0, 0) + filename.encode('UTF-16LE')+'\x00'.encode('UTF-16LE') + 3*b'\x00'
-    #print(hexlify(obj_info))   
-    r = ptp_obj.transaction( 0x100c, [ storage, parent  ], senddata=obj_info ) #[storage, dest_dir_handle]
-    if r['ResponseCode']==0x200f:
-      print('Access denied') #access denied on Ixus 180, like with gphoto2
-    #after we should use SendObject  
-  
+    base_filename = os.path.basename(filename)
+    base_filename += '\x00'
+    # PTP_SendObjectInfo    
+    obj_info = ptp.S_OBJECT_INFO.pack( storage, object_format, 0, len(obj_data), 0, 0, 0, 0, 0, 0, 0, parent, 0, 0, 0) + ptp.encode_str(base_filename) + ptp.encode_str('')+ptp.encode_str('')+ptp.encode_str('')
+    r = ptp_obj.transaction( 0x100c, [ storage, parent  ], senddata=obj_info ) 
+    if r['ResponseCode']!=ptp.RC_OK:
+      print('error %x' % r['ResponseCode']) #sometimes, we've got 0x2006 when overwriting existing files. reboot Camera fixes this
+    else:  
+      storage, parent_handle, new_handle = r['Parameter'] # [ storage, 0, handle ]   
+      print( 'PTP_SendObjectInfo returned:', 'storage = 0x%x'% storage, 'and', 'handle = 0x%x' % new_handle)
+      #after we should use SendObject  
+      r = ptp_obj.transaction( 0x100d, [ ], senddata=obj_data ) #PTP_SendObject 
+      if r['ResponseCode']!=0x2001:
+        print('error %x' % r['ResponseCode'])
+      else:
+        print('Done')
+        
   if 0x9033 in dev_info['operations_supported']: #GetMacAddress
     mac_addr = ptp_obj.get_macaddress()
     print('+ Mac_addr', hexlify(mac_addr))
-
-  for desc in sorted(dev_info['device_prop_supported']):
-    print( ptp_obj.get_device_prop_desc( desc ) )
-
-  print('+ Storage_IDs')
-  storage_ids = ptp_obj.get_storage_ids()
+    
+  if args.list_properties_description:
+    for desc in sorted(dev_info['device_prop_supported']):
+      print( ptp_obj.get_device_prop_desc( desc ) )
   
   if args.list_files:   
+    print('+ Storage_IDs')
+    storage_ids = ptp_obj.get_storage_ids()
     for id in storage_ids:
       print( ptp_obj.get_num_objects( id ) ) 
       storage_info = ptp_obj.get_storage_info( id )
@@ -483,7 +511,5 @@ if __name__ == "__main__":
     with open( obj['filename'], 'wb' ) as file:
       file.write(data)
       print('done')
-
-  # ptp_obj.send_object_info( storage_ids[0] )
 
   ptp_obj.close_session()

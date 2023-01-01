@@ -1,10 +1,10 @@
 # miniPtp.py
 
-version 28dec2022
+version 1jan2023
 
 A minimal Python PTP implementation to talk to your Camera.
 
-Take it as an educational example for PyUsb and PTP, feel free to discover proprietary functions by exploring, such as Canon GetMacAddress...
+Take it as an educational example for PyUsb and PTP, feel free to discover proprietary functions, such as 0x911F / EOS_UpdateFirmware.
 
 ## Installation
 
@@ -12,7 +12,9 @@ Tested with:
 - Python 3.10 and Python 3.8
 - Windows 10 + libusb-win ("libusb-win32 filter" installed with Zadig)
 - Ubuntu 20.10
-- Canon R6 and Ixus 180 (Elph 190)
+- should work on MacOs (untested)
+- Canon R6 and Ixus 180 (aka Elph 190)
+
 
 ## Requirements
 
@@ -20,14 +22,17 @@ Tested with:
 
 ## Features
 
-- list supported operations and properties
+- list supported operations, properties and properties descriptions.
 - list storages and files/handlers
 - allow to get a file (object) using his handler 
+- allow to upload a file at root dir (on Ixus 180). Error 0x200f / access denied on R6.
+- Only USB transport yet, but designed with IP as possible extension
+- PTP operations implemented : GetDeviceInfo, OpenSession, CloseSession, GetStorageIDs, GetStorageInfo, GetObjectHandles, GetObjectInfo, GetObject, GetDevicePropDesc, SendObjectInfo, SendObject and Canon GetMacAddress. But you can use *ptp.transaction* directly.
 
 ## Syntax
 a la ptpcam:
 ```
-usage: miniPtp.py [-h] [-o] [-p] [-i] [-L] [-g HANDLER]
+usage: miniPtp.py [-h] [-o] [-p] [-d] [-i] [-L] [-g HANDLER] [-u UPLOAD]
 
 options:
   -h, --help            show this help message and exit
@@ -35,11 +40,41 @@ options:
                         list supported operations
   -p, --list-properties
                         list supported properties
+  -d, --list-properties-description
+                        list supported properties
   -i, --info            show device info
   -L, --list-files      list all files
   -g HANDLER, --get-file HANDLER
                         get file by given handler
+  -u UPLOAD, --upload UPLOAD
+                        upload file. storage,filename
 ```
+### Upload example
+```
+>python miniPtp.py -u 0,miniPtp.py
++ Model= Canon IXUS 180
++ Device_version= 1-15.0.1.0
+Connected
++ Model_id: 0x4030000
+Try to upload miniPtp.py
+PTP_SendObjectInfo returned: storage = 0x10001 and handle = 0x40029
+Done
+
+>python miniPtp.py -L
++ Model= Canon IXUS 180
++ Device_version= 1-15.0.1.0
+Connected
++ Model_id: 0x4030000
++ Storage_IDs
+3
+{'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 7736426496, 'free_space_bytes': 7726202880, 'free_space_objects': 4294967295, 'storage_description': 'SD', 'volume_identifier': ''}
+  00080000 00010001 00000000 3001        0 DCIM
+    01a00000 00010001 00080000 3001        0 104___07
+      01a0aee1 00010001 01a00000 3801  4952866 IMG_2798.JPG
+      01a0aef1 00010001 01a00000 3801  4637973 IMG_2799.JPG
+  00040029 00010001 00000000 bf01    18517 miniPtp.py
+```
+
 ## miniPtp.py example
 ```
 >python miniPtp.py -poiL
@@ -164,18 +199,12 @@ else:
   print('Update firmware operation not supported') 
 ```
 
-## Limitations 
-
-- Only USB transport yet, but designed with IP as possible extension
-- Tested with Canon R6 and Ixus 180 (Elph 190) 
-- Implemented : GetDeviceInfo, OpenSession, CloseSession, GetStorageIDs, GetStorageInfo, GetObjectHandles, GetObjectInfo, GetObject, GetDevicePropDesc and Canon GetMacAddress
-
-
 ## References and inspirations
 
 - MTP 1.1 : https://www.usb.org/sites/default/files/MTPv1_1.zip (official specification)
-- Gphoto2 : https://github.com/gphoto/libgphoto2/tree/master/camlibs/ptp2 
-- ptplib : https://github.com/leirf/libptp (the reference, in C)
+- Gphoto2 : https://github.com/gphoto/libgphoto2/tree/master/camlibs/ptp2 (more recent, active)
+- chdkPTP : https://app.assembla.com/wiki/show/chdkptp (lua using ptpcam, with a GUI. Compiled for Windows, Linux x64, Raspberry)
+- ptplib : https://github.com/leirf/libptp (in C)
 - camlib : https://github.com/petabyt/camlib (simple, in C)
   - canon hacks : https://github.com/petabyt/camlib/blob/master/src/canon.c
 - sequoia-ptp : https://github.com/Parrot-Developers/sequoia-ptpy (no maintenance, very complete)
@@ -183,5 +212,10 @@ else:
   - DPReview, press release by Nikon (2004) : https://www.dpreview.com/articles/9871487277/nikonptpip
   - Ptpip : https://github.com/mmattes/ptpip (Python, implemented and tested with Nikon D5300, 2017)
   - PTP/IP documentation : http://gphoto.org/doc/ptpip.php
+
+
+## Official ways to drive your Camera from Canon:
+- CCAPI (REST API, requires activation) : https://developers.canon-europe.com/developers/s/article/Latest-CCAPI 
+- EDSDK (Camera <-> EDSDK <-> PTP) : https://developers.canon-europe.com/developers/s/article/How-to-get-access-camera 
 
 
