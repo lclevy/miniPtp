@@ -31,18 +31,26 @@
     0x900C : 'Canon_ViewFinderOff',
     0x9013 : 'Canon_CheckEvent',
     0x9019 : 'Canon_SendPartialObject',
-    0x901A : 'Canon_InitCaptureInRAM',
-    0x901B : 'Canon_GetPartialObjectEx',
-    0x901C : 'Canon_SetObjectTime',
-    0x901D : 'Canon_GetViewFinderImage',
-    0x901E : 'Canon_GetObjectAttributes',
+    0x901a : 'Canon_InitCaptureInRAM',
+    0x901b : 'Canon_GetPartialObjectEx',
+    0x901c : 'Canon_SetObjectTime',
+    0x901d : 'Canon_GetViewFinderImage',
+    0x901e : 'Canon_GetObjectAttributes',
+    0x901f : 'CANON_ChangeUSBProtocol',
+    0x9021 : 'CANON_GetObjectInfoEx',
+    0x9024 : 'CANON_SendObjectInfoByPath',
+    0x9025 : 'CANON_SendObjectByPath',
+    
+    # 0x902f : on R6 and Ixus 180
     
     0x9033 : 'Canon_GetMacAddress', #tested on R6
     
+    #ixus 180 : 0x9038, 0x9039, 0x903a, 0x903b, 0x904b, 0x904c  
+    
     0x9050 : 'Canon_InitiateEventProc_50', #https://chdk.setepontos.com/index.php?topic=4338.msg147738#msg147738
     0x9051 : 'Canon_TerminateEventProc_51',
-    0x9052 : 'Canon_ExecuteEventProc',
-    0x9053 : 'Canon_GetEventProcReturnData',    
+    0x9052 : 'Canon_ExecuteEventProc', #not on ixus 180, neither R6
+    0x9053 : 'Canon_GetEventProcReturnData',
     0x9057 : 'Canon_IsEventProcRunning',
     0x9058 : 'Canon_QuerySizeOfTransparentMemory',
     0x9059 : 'Canon_LoadTransparentMemory',
@@ -50,35 +58,87 @@
     0x905b : 'Canon_QuickLoadTransparentMemory',
     0x905c : 'Canon_InitiateEventProc_5c',
     0x905d : 'Canon_TerminateEventProc_5d',
-    
+
+    #ixus 180 : 0x9060, 0x9062 
+    0x9068 : 'Canon_GetWebServiceSpec',
+    0x9069 : 'Canon_GetWebServiceData',
+    0x906a : 'Canon_SetWebServiceData',
+    0x906b : 'Canon_DeleteWebServiceData',
+    0x906c : 'Canon_GetRootCertificateSpec',
+    0x906d : 'Canon_GetRootCertificateData',
+    0x906e : 'Canon_SetRootCertificateData',
+    0x906f : 'Canon_DeleteRootCertificateData',
+    0x9075 : 'Canon_GetGpsMobilelinkObjectInfo',
+    0x9076 : 'Canon_SendGpsTagInfo',
+    0x9077 : 'Canon_GetTranscodeApproxSize', #r6
+    0x9078 : 'Canon_RequestTranscodeStart',
+    0x9079 : 'Canon_RequestTranscodeCancel ',
     0x9086 : 'Canon_SetRemoteShootingMode',
     
+    #DSLR/Mirrorless models
+    0x9101 : 'EOS_GetStorageIDs',
+    0x9102 : 'EOS_GetStorageInfo',
+    0x9103 : 'EOS_GetObjectInfo',
+    0x9104 : 'EOS_GetObject',
+    0x9105 : 'EOS_DeleteObject',
+    0x9106 : 'EOS_FormatStore',
+    0x9107 : 'EOS_GetPartialObject',
+    0x9108 : 'EOS_GetDeviceInfoEx',
     0x9109 : 'EOS_GetObjectInfoEx', # [ storage, handle, association ? ]
+    0x910a : 'EOS_GetThumbEx',
+    0x910c : 'EOS_SetObjectAttributes',
+    0x910f : 'EOS_Remote_Release',
     0x9110 : 'EOS_SetDevicePropValueEx',
     0x9113 : 'EOS_GetRemoteMode',
     0x9114 : 'EOS_SetRemoteMode',
     0x9115 : 'EOS_SetEventMode',
     0x9116 : 'EOS_GetEvent',
+    0x9117 : 'EOS_TransferComplete',
+    0x9118 : 'EOS_CancelTransfer',
     
     0x911A : 'EOS_PCHDDCapacity',
-    
     0x911B : 'EOS_SetUILock', #https://github.com/petabyt/camlib/blob/master/src/ptp.h
     0x911C : 'EOS_ResetUILock',
     0x911D : 'EOS_KeepDeviceOn',
+    
     0x911F : 'EOS_UpdateFirmware',
     0x9128 : 'EOS_RemoteReleaseOn',
     0x9129 : 'EOS_RemoteReleaseOff',
-    0x9155 : 'EOS_DriveLens',
+    
+    0x912c : 'EOS_GetPartialObjectEx',
+    0x9132 : 'EOS_EndGetPartialObjectEx',
+    0x9135 : 'EOS_GetCTGInfo',    
+    0x9136 : 'EOS_GetLensAdjust',
+    
+    0x913d : 'EOS_SetRequestOLCInfoGroup',
+    0x913f : 'EOS_GetCameraSupport',
+    0x9141 : 'EOS_RequestInnerDevelopStart', 
+    0x9143 : 'EOS_RequestInnerDevelopEnd',
+    0x9144 : 'EOS_GetGpsLoggingData',
+    0x9145 : 'EOS_GetGpsLogCurrentHandle',
+    0x9146 : 'EOS_SetImageRecoveryData',
+    0x9147 : 'EOS_GetImageRecoveryList',
+    0x9148 : 'EOS_FormatRecoveryData',
+    0x9149 : 'EOS_GetPresetLensAdjustParam',
+    0x914a : 'EOS_GetRawDispImage',
+    0x914b : 'EOS_SaveImageRecoveryData',
+    0x914c : 'EOS_BLERequest',
+    0x914d : 'EOS_DrivePowerZoom',
+
+    0x914f : 'EOS_GetIptcData',
+    0x9150 : 'EOS_SetIptcData',
+
     0x9151 : 'EOS_InitiateViewfinder',
     0x9152 : 'EOS_TerminateViewfinder',
     0x9153 : 'EOS_GetViewFinderData',
     0x9154 : 'EOS_DoAutoFocus',
-    
+    0x9155 : 'EOS_DriveLens',
+    #r6 : 0x9157 0x9158 0x9159 0x915a 0x915b 0x915c 0x915d 0x9160 0x9166 0x916b 0x916c 0x916d 0x916e 0x916f 0x9170 0x9171 0x9172 0x9173 0x9174 0x9177 0x9178 0x9179 0x9180 0x9181 0x9182 0x9183 0x9184 0x9185 0x9186 0x9187 0x9188
     0x9189 : 'EOS_GetPictureStylePCFlavorParam',
-    
+    #r6 : 0x918a 0x91ae 0x91af 0x91b9 0x91ba 0x91d3 0x91d4 0x91d5 0x91d7 0x91d8 0x91d9 0x91da 0x91db 0x91dc 0x91dd 0x91de 0x91e1 0x91e3 0x91e6 0x91e7 0x91e8 0x91e9 0x91ec 0x91f0 0x91f1
     0x91FE : 'EOS_FAPIMessageTX',
     0x91FF : 'EOS_FAPIMessageRX',
-    #and https://github.com/reticulatedpines/magiclantern_simplified/blob/3ae7e828d8489ff399f9d7817bb4dc31e84bd6d6/contrib/ptpcam/ptp.h#L115-L252
+    #and https://github.com/reticulatedpines/magiclantern_simplified/blob/3ae7e828d8489ff399f9d7817bb4dc31e84bd6d6/contrib/ptpcam/ptp-eos-oc.h
     
     0x9801 : 'MTP_GetObjectPropsSupported',
     0x9802 : 'MTP_GetObjectPropDesc',
@@ -92,9 +152,28 @@
   },
   property_codes : {
       0x5001 : 'BatteryLevel',
+      
+      0xd002 : 'Canon_BatteryKind',
+      0xd003 : 'Canon_BatteryStatus',
+      0xd02e : 'Canon_SizeOfOutputDataFromCamera',
+      0xd02f : 'Canon_SizeOfInputDataToCamera',
+      0xd030 : 'Canon_RemoteAPIVersion',
+      0xd031 : 'Canon_FirmwareVersion',
+      0xd032 : 'Canon_CameraModel',
+      0xd033 : 'Canon_CameraOwner',
+      0xd034 : 'Canon_UnixTime',
+      0xd045 : 'Canon_EventEmulateMode',
+      0xd046 : 'Canon_DPOFVersion',
+      0xd047 : 'Canon_TypeOfSupportedSlideShow',
+      0xd049 : 'Canon_ModelID',
+      # Ixus : 0xd04a, 0xd050, 0xd051, 0xd052, 0xd057 
+      
       0xd303 : 'UsedDeviceState', 
       0xd402 : 'DeviceFriendlyName',
       0xd406 : 'SessionInitiatorVersionInfo',
       0xd407 : 'PerceivedDeviceType'
+  },
+  Canon_events : {
+    0xc189 : 'EOS_PropValueChanged'
   }
 }

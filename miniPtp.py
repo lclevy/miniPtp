@@ -75,10 +75,10 @@ class ptp:
   PACKET_TYPE_DATA = 2
   PACKET_TYPE_RESPONSE = 3
     
-  def __init__( self, trans={'usb':True} ):
+  def __init__( self, usb=True, vendor=usb_tr.VENDORID_CANON ):
     self._transaction = 0
-    if 'usb' in trans:
-      self.device = usb_tr()
+    if usb:
+      self.device = usb_tr( vendor )
     else: # USB is the only transport supported yet
       return None    
 
@@ -256,6 +256,7 @@ class ptp:
   '''
   def write(self, data):
     total_sent = 0  
+    #print(self.device.in_ep.wMaxPacketSize)
     while total_sent < len(data):
       sent = self.device.out_ep.write( data[total_sent:] )
       total_sent += sent
@@ -273,16 +274,12 @@ class ptp:
   '''
   PTP transaction
   '''
-  def transaction(self, code, params, data_phase=True, senddata=None):
+  def transaction(self, code, req_params, data_phase=True, senddata=None):
 
     #request
-    if len(params)>0:
-      _len = ptp.S_HEADER.size + len(params)*Struct('<L').size
-    else:
-      _len = ptp.S_HEADER.size
-       
+    _len = ptp.S_HEADER.size + len(req_params)*Struct('<L').size       
     packet = pack( '<L', _len ) + pack('<H', ptp.PACKET_TYPE_COMMAND) + pack('<H', code) + pack('<L', self._transaction)
-    parameters = b''.join( [ pack('<L', p) for p in params ] )
+    parameters = b''.join( [ pack('<L', p) for p in req_params ] )
     l = self.write( packet + parameters)
     assert l == _len
 
@@ -380,7 +377,7 @@ class ptp:
    
 
   def print_obj( h, obj, level ):
-    print('%s%08x %08x %08x %04x %8d %s' % (level*'  ', h, obj['storage_id'], obj['parent_obj'], obj['object_format'], obj['object_compr_size'],obj['filename']) )
+    print('%s%08x %08x %08x %04x %d %8d %s' % (level*'  ', h, obj['storage_id'], obj['parent_obj'], obj['object_format'], obj['protection_status'], obj['object_compr_size'],obj['filename']) )
 
   def ls_r( self, storage_id, _handles, level=0 ):
     for h in _handles:
@@ -446,10 +443,11 @@ if __name__ == "__main__":
     print('Connected') 
       
   #ptp_obj.transaction( 0x9114, [ 1 ], False ) #Canon_SetRemoteMode
-  events = ptp_obj.get_events()
-  print('+ Model_id: 0x%x' % unpack('<L', events[0xc189][0xd116][3] ) )
-  if 0xd1d8 in events[0xc189]: print('LensName', ptp.zeroterm_str(events[0xc189][0xd1d8][3]) ) #LensName
-  if 0xd125 in events[0xc189]: print('hostname', ptp.zeroterm_str(events[0xc189][0xd125][3]) ) #hostname
+  if 0x9116 in dev_info['operations_supported']: #Canon_GetEvent
+    events = ptp_obj.get_events()
+    print('+ Model_id: 0x%x' % unpack('<L', events[0xc189][0xd116][3] ) )
+    if 0xd1d8 in events[0xc189]: print('LensName', ptp.zeroterm_str(events[0xc189][0xd1d8][3]) ) #LensName
+    if 0xd125 in events[0xc189]: print('hostname', ptp.zeroterm_str(events[0xc189][0xd125][3]) ) #hostname
 
   ptp_obj.set_prop_device_value( 0xd406, b'/'+'Windows/10.0.19045 MTPClassDriver/10.0.19041.0\x00'.encode('UTF-16LE') )
   
