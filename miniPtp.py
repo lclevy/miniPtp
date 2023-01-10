@@ -74,16 +74,24 @@ class ptp:
   PACKET_TYPE_COMMAND = 1
   PACKET_TYPE_DATA = 2
   PACKET_TYPE_RESPONSE = 3
-    
+  
+  ptp_dict = dict()
+  try:
+    stream = open("ptp.yml", 'r')
+    ptp_dict = yaml.safe_load(stream)   
+  except FileNotFoundError:
+      print('file ptp.yml is missing')     
+
+  
   def __init__( self, usb=True, vendor=usb_tr.VENDORID_CANON ):
     self._transaction = 0
+    self.vendor = vendor  
+    
     if usb:
       self.device = usb_tr( vendor )
     else: # USB is the only transport supported yet
       return None    
 
-  '''def build_header( self, size, ptp_type, ptp_code ):
-    return ptp.S_HEADER.pack( size, ptp_type, ptp_code, self._transaction )'''
 
   '''
   Parsing Functions
@@ -311,6 +319,16 @@ class ptp:
 
     return { 'ResponseCode': ptp_header.code, 'Data':bytes(data), 'Parameter':respParams }
   
+  def check_result(resp, respCodeOnly=True):
+    rc = resp['ResponseCode']
+    if rc != 0x2001:
+      if rc in ptp.ptp_dict['response_code']:
+        print('0x%x' % rc, ptp.ptp_dict['response_code'][rc])
+      else:  
+        print('0x%x' % rc)
+    elif not respCodeOnly:
+      print('ResponseCode:0x%x,' % rc, 'Data:%s,' % hexlify(resp['Data'][ptp.S_HEADER.size:]), 'Parameter:', [ '0x%x' % p for p in resp['Parameter'] ] )
+  
   '''
   PTP commands
   '''  
@@ -330,7 +348,9 @@ class ptp:
     self.transaction( 0x1003, [ self.session_id ], False )
   
   def get_macaddress( self ):
-    data = self.transaction( 0x9033, [] )['Data']
+    res = self.transaction( 0x9033, [] )
+    ptp.check_result( res )
+    data = res['Data']
     return data[ptp.S_HEADER.size:] #return mac address, wifi on R6
 
   def get_storage_ids( self ):
@@ -401,10 +421,6 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
     
-  #init module
-  stream = open("ptp.yml", 'r')
-  ptp_dict = yaml.safe_load(stream)
-
   try:
     ptp_obj = ptp()
   except ValueError as e:
@@ -417,8 +433,8 @@ if __name__ == "__main__":
   if args.list_operations:
     print('+ operations_supported')
     for op in sorted(dev_info['operations_supported']):
-      if op in ptp_dict['operations_codes']:
-        print('0x%x/%s' % (op,ptp_dict['operations_codes'][op]), end=' ')  
+      if op in ptp.ptp_dict['operations_codes']:
+        print('0x%x/%s' % (op,ptp.ptp_dict['operations_codes'][op]), end=' ')  
       else:
         print('0x%x' % op, end=' ')
     print()
@@ -426,8 +442,8 @@ if __name__ == "__main__":
   if args.list_properties:
     print('+ device_prop_supported')
     for prop in sorted(dev_info['device_prop_supported']):
-      if prop in ptp_dict['property_codes']:
-        print('0x%x/%s' % (prop,ptp_dict['property_codes'][prop]), end=' ')  
+      if prop in ptp.ptp_dict['property_codes']:
+        print('0x%x/%s' % (prop,ptp.ptp_dict['property_codes'][prop]), end=' ')  
       else:
         print('0x%x' % prop, end=' ')
     print()
@@ -437,6 +453,7 @@ if __name__ == "__main__":
   #print(dev_info)
   
   r = ptp_obj.open_session()
+  ptp.check_result(r)
   if r['ResponseCode']!=ptp.RC_OK:
     print('error %x' % r['ResponseCode'])
   else:

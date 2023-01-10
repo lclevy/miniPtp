@@ -1,6 +1,6 @@
 # miniPtp.py
 
-version 1jan2023
+version 10jan2023
 
 A minimal Python PTP implementation to talk to your Camera.
 
@@ -11,8 +11,7 @@ Take it as an educational example for PyUsb and PTP, feel free to discover propr
 Tested with:
 - Python 3.10 and Python 3.8
 - Windows 10 + libusb-win ("libusb-win32 filter" installed with Zadig)
-- Ubuntu 20.10
-- should work on MacOs (untested)
+- Ubuntu 20.10 and MacOs 11
 - Canon R6 and Ixus 180 (aka Elph 190)
 
 
@@ -204,8 +203,9 @@ else:
 - MTP 1.1 : https://www.usb.org/sites/default/files/MTPv1_1.zip (official specification)
 - Gphoto2 : https://github.com/gphoto/libgphoto2/tree/master/camlibs/ptp2 (more recent, active)
 - chdkPTP : https://app.assembla.com/wiki/show/chdkptp (lua using ptpcam, with a GUI. Compiled for Windows, Linux x64, Raspberry)
-- ptplib : https://github.com/leirf/libptp (in C)
-- camlib : https://github.com/petabyt/camlib (simple, in C)
+- ptpcam/ptplib2 : https://github.com/leirf/libptp (since 2013)
+- ptpcam/libptp2 : https://sourceforge.net/projects/libptp/files/libptp2/ (Mariusz Woloszyn 2001-2011)
+- camlib : https://github.com/petabyt/camlib (2022, in C)
   - canon hacks : https://github.com/petabyt/camlib/blob/master/src/canon.c
 - sequoia-ptp : https://github.com/Parrot-Developers/sequoia-ptpy (no maintenance, very complete)
 - PTP/IP 
@@ -217,5 +217,3 @@ else:
 ## Official ways to drive your Camera from Canon:
 - CCAPI (REST API, requires activation) : https://developers.canon-europe.com/developers/s/article/Latest-CCAPI 
 - EDSDK (Camera <-> EDSDK <-> PTP) : https://developers.canon-europe.com/developers/s/article/How-to-get-access-camera 
-
-
