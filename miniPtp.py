@@ -9,7 +9,6 @@ Laurent Clevy
 import os
 import sys
 import argparse
-from time import sleep
 
 #os.environ['PYUSB_DEBUG'] = 'debug'
 #os.environ['LIBUSB_DEBUG'] = '4'
@@ -211,6 +210,7 @@ class ptp:
     for a,b in zip( ptp.S_DEVICE_PROP_DESC.unpack_from( data, ptr), 
       ['property_code', 'datatype', 'get_set' ] ):
       device_prop_desc[ b ] = a
+    
     ptr += ptp.S_DEVICE_PROP_DESC.size
     if device_prop_desc['datatype']==2: #uint8
       device_prop_desc['default'] = int(data[ptr])
@@ -221,6 +221,9 @@ class ptp:
       ptr += size
       device_prop_desc['current'], size = ptp.parse_string( data[ptr:] )
       ptr += size
+    elif device_prop_desc['datatype']==4: #uint16
+      device_prop_desc['default'],  device_prop_desc['current'] = Struct('<HH').unpack( data[ptr:ptr+4] )
+      ptr += Struct('<HH').size
     elif device_prop_desc['datatype']==6: #uint32
       device_prop_desc['default'],  device_prop_desc['current'] = Struct('<LL').unpack( data[ptr:ptr+8] )
       ptr += Struct('<LL').size
@@ -229,6 +232,13 @@ class ptp:
       
     device_prop_desc['form'] = int(data[ptr])
     return device_prop_desc  
+
+  def print_prop_desc( prop ):
+    #{'property_code': 20481, 'datatype': 2, 'get_set': 0, 'default': 17, 'current': 17, 'form': 2}
+    #print(prop)
+    prop_name = ptp.ptp_dict['property_codes'].get( prop['property_code'], '?' )
+    prop_type = ptp.ptp_dict['property_types'].get( prop['datatype'], '?' )
+    print( 'property_code: 0x%x/%s,' % (prop['property_code'], prop_name), 'datatype: 0x%x/%s,' % (prop['datatype'],prop_type), 'current:', prop.get('current','n/a') )
 
   def parse_events( data ):
     ptr = ptp.S_HEADER.size
@@ -298,14 +308,26 @@ class ptp:
         ptp_header = ptp.parse_header( data )
         #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
         assert ptp_header.len >= ptp.S_HEADER.size 
-        assert ptp_header.code == code
+        if ptp_header.type == 3:
+          print('Unexpected Response len=0x%02x,' % ptp_header.len, end=' ')
+          ptp.check_rc( ptp_header.code )
+          return {}
+        else:
+          assert ptp_header.code == code
+
         assert ptp_header.transaction == self._transaction   
       else:  #senddata      
         packet = pack( '<L', ptp.S_HEADER.size+len(senddata) ) + pack('<H', ptp.PACKET_TYPE_DATA) + pack('<H', code) + pack('<L', self._transaction)
         l = self.write( packet + senddata )                 
     
     #response
+    #try: 
     response = self.read()
+    '''except usb.core.USBError as e:
+      print(e)
+      self._transaction += 1
+      return { 'ResponseCode': 0x2000, 'Data':None, 'Parameter':None }
+      '''
     ptp_header = ptp.parse_header( response )
     #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
     assert ptp_header.len >= ptp.S_HEADER.size
@@ -319,14 +341,18 @@ class ptp:
 
     return { 'ResponseCode': ptp_header.code, 'Data':bytes(data), 'Parameter':respParams }
   
-  def check_result(resp, respCodeOnly=True):
-    rc = resp['ResponseCode']
+  def check_rc( rc ) :
     if rc != 0x2001:
       if rc in ptp.ptp_dict['response_code']:
         print('0x%x' % rc, ptp.ptp_dict['response_code'][rc])
       else:  
-        print('0x%x' % rc)
-    elif not respCodeOnly:
+        print('0x%x' % rc)          
+    return rc == 0x2001
+  
+  def check_result(resp, respCodeOnly=True):
+    rc = resp['ResponseCode']
+    ptp.check_rc( rc )
+    if not respCodeOnly:
       print('ResponseCode:0x%x,' % rc, 'Data:%s,' % hexlify(resp['Data'][ptp.S_HEADER.size:]), 'Parameter:', [ '0x%x' % p for p in resp['Parameter'] ] )
   
   '''
@@ -451,7 +477,7 @@ if __name__ == "__main__":
   print( '+ Device_version=', dev_info['device_version'] )
 
   #print(dev_info)
-  
+  print('+ Opening session')
   r = ptp_obj.open_session()
   ptp.check_result(r)
   if r['ResponseCode']!=ptp.RC_OK:
@@ -505,8 +531,10 @@ if __name__ == "__main__":
     print('+ Mac_addr', hexlify(mac_addr))
     
   if args.list_properties_description:
+    print('+ properties supported')
     for desc in sorted(dev_info['device_prop_supported']):
-      print( ptp_obj.get_device_prop_desc( desc ) )
+      #print( ptp_obj.get_device_prop_desc( desc ) )
+      ptp.print_prop_desc( ptp_obj.get_device_prop_desc( desc ) )
   
   if args.list_files:   
     print('+ Storage_IDs')

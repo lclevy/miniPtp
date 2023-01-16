@@ -1,6 +1,6 @@
 # miniPtp.py
 
-version 10jan2023
+version 16jan2023
 
 A minimal Python PTP implementation to talk to your Camera.
 
@@ -76,37 +76,39 @@ Connected
 
 ## miniPtp.py example
 ```
->python miniPtp.py -poiL
-idProduct=0x32f5
+>python miniPtp.py -Lodip
 + operations_supported
-0x1001/PTP_GetDeviceInfo 0x1002/PTP_OpenSession 0x1003/PTP_CloseSession 0x1004/PTP_GetStorageIDs 0x1005/PTP_GetStorageInfo 0x1006/PTP_GetNumObjects 0x1007/PTP_GetObjectHandles 0x1008/PTP_GetObjectInfo 0x1009/PTP_GetObject 0x100a/PTP_GetThumb 0x100b/PTP_DeleteObject 0x100c/PTP_SendObjectInfo 0x100d/PTP_SendObject 0x100f/PTP_FormatStore 0x1014/PTP_GetDevicePropDesc 0x1016/PTP_SetDevicePropValue 0x101b/PTP_GetPartialObject 0x902f 0x9033/Canon_GetMacAddress 0x9050/Canon_EnableCommand 0x9051 0x905c 0x905d 0x9060 0x9068 0x9069 0x906a 0x906b 0x906c 0x906d 0x906e 0x906f 0x9077 0x9078 0x9079 0x9101 0x9102 0x9103 0x9104 0x9105 0x9106 0x9107 0x9108 0x9109 0x910a 0x910c 0x910f 0x9110 0x9114/Canon_SetRemoteMode 0x9115/Canon_SetEventMode 0x9116/Canon_GetEvent 0x9117 0x9118 0x911a 0x911b 0x911c 0x911d 0x911e 0x911f 0x9122 0x9123 0x9124 0x9127 0x9128 0x9129 0x912b 0x912c 0x912d 0x912e 0x912f 0x9130 0x9131 0x9132 0x9133 0x9134 0x9135 0x9136 0x9137 0x9138 0x9139 0x913a 0x913b 0x913c 0x913d 0x913e 0x913f 0x9140 0x9141 0x9143 0x9144 0x9145 0x9146 0x9148 0x9149 0x914a 0x914b 0x914d 0x914f 0x9150 0x9153 0x9154 0x9155 0x9157 0x9158 0x9159 0x915a 0x915b 0x915c 0x915d 0x9160 0x9166 0x916b 0x916c 0x916d 0x916e 0x916f 0x9170 0x9171 0x9172 0x9173 0x9174 0x9177 0x9178 0x9179 0x9180 0x9181 0x9182 0x9183 0x9184 0x9185 0x9186 0x9187 0x9188 0x9189 0x918a 0x91ae 0x91af 0x91b9 0x91ba 0x91d3 0x91d4 0x91d5 0x91d7 0x91d8 0x91d9 0x91da 0x91db 0x91dc 0x91dd 0x91de 0x91e1 0x91e3 0x91e6 0x91e7 0x91e8 0x91e9 0x91ec 0x91f0 0x91f1
+0x1001/PTP_GetDeviceInfo 0x1002/PTP_OpenSession 0x1003/PTP_CloseSession 0x1004/PTP_GetStorageIDs 0x1005/PTP_GetStorageInfo 0x1006/PTP_GetNumObjects 0x1007/PTP_GetObjectHandles 0x1008/PTP_GetObjectInfo 0x1009/PTP_GetObject 0x100a/PTP_GetThumb 0x100b/PTP_DeleteObject 0x100c/PTP_SendObjectInfo 0x100d/PTP_SendObject 0x100f/PTP_FormatStore 0x1014/PTP_GetDevicePropDesc 0x1016/PTP_SetDevicePropValue 0x101b/PTP_GetPartialObject 0x902f 0x9033/Canon_GetMacAddress 0x9050/Canon_InitiateEventProc_50 0x9051/Canon_TerminateEventProc_51 0x905c/Canon_InitiateEventProc_5c 0x905d/Canon_TerminateEventProc_5d 0x9060/Canon_IsNeoKabotanProcMode 0x9068/Canon_GetWebServiceSpec 0x9069/Canon_GetWebServiceData 0x906a/Canon_SetWebServiceData 0x906b/Canon_DeleteWebServiceData 0x906c/Canon_GetRootCertificateSpec 0x906d/Canon_GetRootCertificateData 0x906e/Canon_SetRootCertificateData 0x906f/Canon_DeleteRootCertificateData 0x9077/Canon_GetTranscodeApproxSize 0x9078/Canon_RequestTranscodeStart 0x9079/Canon_RequestTranscodeCancel  0x9101/EOS_GetStorageIDs 0x9102/EOS_GetStorageInfo 0x9103/EOS_GetObjectInfo 0x9104/EOS_GetObject 0x9105/EOS_DeleteObject 0x9106/EOS_FormatStore 0x9107/EOS_GetPartialObject 0x9108/EOS_GetDeviceInfoEx 0x9109/EOS_GetObjectInfoEx 0x910a/EOS_GetThumbEx 0x910c/EOS_SetObjectAttributes 0x910f/EOS_Remote_Release 0x9110/EOS_SetDevicePropValueEx 0x9114/EOS_SetRemoteMode 0x9115/EOS_SetEventMode 0x9116/EOS_GetEvent 0x9117/EOS_TransferComplete 0x9118/EOS_CancelTransfer 0x911a/EOS_PCHDDCapacity 0x911b/EOS_SetUILock 0x911c/EOS_ResetUILock 0x911d/EOS_KeepDeviceOn 0x911e 0x911f/EOS_UpdateFirmware 0x9122 0x9123 0x9124 0x9127 0x9128/EOS_RemoteReleaseOn 0x9129/EOS_RemoteReleaseOff 0x912b 0x912c/EOS_GetPartialObjectEx 0x912d 0x912e 0x912f 0x9130 0x9131 0x9132/EOS_EndGetPartialObjectEx 0x9133 0x9134 0x9135/EOS_GetCTGInfo 0x9136/EOS_GetLensAdjust 0x9137 0x9138 0x9139 0x913a 0x913b 0x913c 0x913d/EOS_SetRequestOLCInfoGroup 0x913e 0x913f/EOS_GetCameraSupport 0x9140 0x9141/EOS_RequestInnerDevelopStart 0x9143/EOS_RequestInnerDevelopEnd 0x9144/EOS_GetGpsLoggingData 0x9145/EOS_GetGpsLogCurrentHandle 0x9146/EOS_SetImageRecoveryData 0x9148/EOS_FormatRecoveryData 0x9149/EOS_GetPresetLensAdjustParam 0x914a/EOS_GetRawDispImage 0x914b/EOS_SaveImageRecoveryData 0x914d/EOS_DrivePowerZoom 0x914f/EOS_GetIptcData 0x9150/EOS_SetIptcData 0x9153/EOS_GetViewFinderData 0x9154/EOS_DoAutoFocus 0x9155/EOS_DriveLens 0x9157/Canon_ClickWB 0x9158/Canon_Zoom 0x9159/Canon_ZoomPosition 0x915a/Canon_SetLiveAFFrame 0x915b/Canon_TouchAfPosition 0x915c/Canon_SetLvPcFlavoreditMode 0x915d/Canon_SetLvPcFlavoreditParam 0x9160/Canon_AFCancel 0x9166 0x916b/Canon_SetImageRecoveryDataEx 0x916c/Canon_GetImageRecoveryListEx 0x916d/Canon_CompleteAutoSendImages 0x916e/Canon_NotifyAutoTransferStatus 0x916f/Canon_GetReducedObject 0x9170/Canon_GetObjectInfo64 0x9171/Canon_GetObject64 0x9172/Canon_GetPartialObject64 0x9173/Canon_GetObjectInfoEx64 0x9174/Canon_GetPartialObjectEx64 0x9177/Canon_NotifySaveComplete 0x9178/Canon_GetTranscodedBlock 0x9179/Canon_TransferCompleteTranscodedBlock 0x9180 0x9181 0x9182/Canon_NotifyEstimateNumberofImport 0x9183/Canon_NotifyNumberofImported 0x9184/Canon_NotifySizeOfPartialDataTransfer 0x9185/Canon_NotifyFinish 0x9186/EOS_GetWftData 0x9187/EOS_SetWftData 0x9188/EOS_ChangeWftSettingNum 0x9189/EOS_GetPictureStylePCFlavorParam 0x918a 0x91ae 0x91af 0x91b9/Canon_SetFELock 0x91ba/EOS_DeleteWftSettingNum 0x91d3 0x91d4/Canon_SendCertData 0x91d5 0x91d7/Canon_DistinctionRTC 0x91d8/Canon_NotifyGpsTimeSyncStatus 0x91d9 0x91da 0x91db 0x91dc 0x91dd 0x91de 0x91e1 0x91e3 0x91e6/Canon_NotifyAdapterStatus 0x91e7 0x91e8/Canon_ceresNotifyNetworkError 0x91e9/Canon_AdapterTransferProgress 0x91ec/Canon_ceresSEndWpsPinCode 0x91f0/Canon_TransferComplete2 0x91f1/Canon_CancelTransfer2
 + device_prop_supported
 0x5001/BatteryLevel 0xd303/UsedDeviceState 0xd402/DeviceFriendlyName 0xd406/SessionInitiatorVersionInfo 0xd407/PerceivedDeviceType
 + Model= Canon EOS R6
 + Device_version= 3-1.5.0
++ Opening session
+Connected
 + Model_id: 0x80000453
 LensName b'RF24-105mm F4 L IS USM'
 hostname b'EOSR6_xxxxxx'
 + Mac_addr b'74bfc0xxxxxx'
-{'property_code': 20481, 'datatype': 2, 'get_set': 0, 'default': 63, 'current': 63, 'form': 2}
-{'property_code': 54019, 'datatype': 2, 'get_set': 0, 'default': 1, 'current': 1, 'form': 0}
-{'property_code': 54274, 'datatype': 65535, 'get_set': 0, 'default': 'Canon EOS R6', 'current': 'Canon EOS R6', 'form': 0}
-{'property_code': 54278, 'datatype': 65535, 'get_set': 1, 'default': 'Unknown Initiator', 'current': 'Unknown Initiator', 'form': 0}
-{'property_code': 54279, 'datatype': 6, 'get_set': 0, 'default': 1, 'current': 1, 'form': 0}
++ properties supported
+property_code: 0x5001/BatteryLevel, datatype: 0x2/uint8, current: 16
+property_code: 0xd303/UsedDeviceState, datatype: 0x2/uint8, current: 1
+property_code: 0xd402/DeviceFriendlyName, datatype: 0xffff/str, current: Canon EOS R6
+property_code: 0xd406/SessionInitiatorVersionInfo, datatype: 0xffff/str, current: Windows/10.0.19045 MTPClassDriver/10.0.19041.0
+property_code: 0xd407/PerceivedDeviceType, datatype: 0x6/uint32, current: 1
 + Storage_IDs
-2
-{'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 15923150848, 'free_space_bytes': 15554052096, 'free_space_objects': 4294967295, 'storage_description': 'SD1', 'volume_identifier': ''}
-  50000000 00010001 00000000 3001        0 DCIM
-    51900000 00010001 50000000 3001        0 100CANON
-      5190d321 00010001 51900000 b108 21662294 2U4A3378.CR3
-      5190d381 00010001 51900000 b108 18202710 2U4A3384.CR3
-      5190d391 00010001 51900000 b108 18094166 2U4A3385.CR3
-...
-      5190d4e1 00010001 51900000 b108 17670230 2U4A3406.CR3
-      5190d4f1 00010001 51900000 b108 18219606 2U4A3407.CR3
-  60080000 00010001 00000000 3001        0 MISC
 0
-{'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 0, 'free_space_bytes': 0, 'free_space_objects': 4294967295, 'storage_description': 'SD2', 'volume_identifier': ''}
+{'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 0, 'free_space_bytes': 0, 'free_space_objects': 4294967295, 'storage_description': 'SD1', 'volume_identifier': ''}
+2
+{'storage_type': 4, 'filesystem_type': 3, 'access_capability': 0, 'max_capacity': 15923150848, 'free_space_bytes': 15420555264, 'free_space_objects': 4294967295, 'storage_description': 'SD2', 'volume_identifier': ''}
+  90000000 00020001 00000000 3001 1        0 DCIM
+    91900000 00020001 90000000 3001 1        0 100CANON
+      9190d321 00020001 91900000 b108 0 21662294 2U4A3378.CR3
+      9190d381 00020001 91900000 b108 0 18202710 2U4A3384.CR3
+...
+      9190d4f1 00020001 91900000 b108 0 18219606 2U4A3407.CR3
+    91940000 00020001 90000000 3001 1        0 101CNOOO
+      9194d501 00020001 91940000 b108 0 24550486 2U4A3408.CR3
+  a0080000 00020001 00000000 3001 1        0 MISC
 
 ```
 to get file 2U4A3384.CR3:
@@ -200,12 +202,12 @@ else:
 
 ## References and inspirations
 
-- MTP 1.1 : https://www.usb.org/sites/default/files/MTPv1_1.zip (official specification)
-- Gphoto2 : https://github.com/gphoto/libgphoto2/tree/master/camlibs/ptp2 (more recent, active)
-- chdkPTP : https://app.assembla.com/wiki/show/chdkptp (lua using ptpcam, with a GUI. Compiled for Windows, Linux x64, Raspberry)
+- MTP 1.1 : https://www.usb.org/sites/default/files/MTPv1_1.zip (2011, official specification)
+- Gphoto2 : https://github.com/gphoto/libgphoto2/tree/master/camlibs/ptp2 (since 2002, Marcus Meissner and co. Active)
+- chdkPTP : https://app.assembla.com/wiki/show/chdkptp (since 2011, Reyalp, lua using ptpcam, with a GUI. Compiled for Windows, Linux x64, Raspberry)
 - ptpcam/ptplib2 : https://github.com/leirf/libptp (since 2013)
 - ptpcam/libptp2 : https://sourceforge.net/projects/libptp/files/libptp2/ (Mariusz Woloszyn 2001-2011)
-- camlib : https://github.com/petabyt/camlib (2022, in C)
+- camlib : https://github.com/petabyt/camlib (2022, Petabyte, in C)
   - canon hacks : https://github.com/petabyt/camlib/blob/master/src/canon.c
 - sequoia-ptp : https://github.com/Parrot-Developers/sequoia-ptpy (no maintenance, very complete)
 - PTP/IP 

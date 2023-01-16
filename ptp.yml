@@ -40,14 +40,14 @@
     0x901c : 'Canon_SetObjectTime',
     0x901d : 'Canon_GetViewFinderImage',
     0x901e : 'Canon_GetObjectAttributes',
-    0x901f : 'CANON_ChangeUSBProtocol',
-    0x9021 : 'CANON_GetObjectInfoEx',
-    0x9024 : 'CANON_SendObjectInfoByPath',
-    0x9025 : 'CANON_SendObjectByPath',
+    0x901f : 'Canon_ChangeUSBProtocol',
+    0x9021 : 'Canon_GetObjectInfoEx',
+    0x9024 : 'Canon_SendObjectInfoByPath',
+    0x9025 : 'Canon_SendObjectByPath',
     
     # 0x902f : on R6 and Ixus 180
     
-    0x9033 : 'Canon_GetMacAddress', #tested on R6
+    0x9033 : 'Canon_GetMacAddress', 
     
     #ixus 180 : 0x9038, 0x9039, 0x903a, 0x903b, 0x904b, 0x904c  
     
@@ -62,8 +62,9 @@
     0x905b : 'Canon_QuickLoadTransparentMemory',
     0x905c : 'Canon_InitiateEventProc_5c',
     0x905d : 'Canon_TerminateEventProc_5d',
+    0x9060 : 'Canon_IsNeoKabotanProcMode', #ixus 180 only
 
-    #ixus 180 : 0x9060, 0x9062 
+    #ixus 180 : 0x9062 
     0x9068 : 'Canon_GetWebServiceSpec',
     0x9069 : 'Canon_GetWebServiceData',
     0x906a : 'Canon_SetWebServiceData',
@@ -90,6 +91,7 @@
     0x9108 : 'EOS_GetDeviceInfoEx',
     0x9109 : 'EOS_GetObjectInfoEx', # [ storage, handle, association ? ]
     0x910a : 'EOS_GetThumbEx',
+    0x910b : 'Canon_Send_Partial_Object', 
     0x910c : 'EOS_SetObjectAttributes',
     0x910f : 'EOS_Remote_Release',
     0x9110 : 'EOS_SetDevicePropValueEx',
@@ -117,6 +119,7 @@
     0x913d : 'EOS_SetRequestOLCInfoGroup',
     0x913f : 'EOS_GetCameraSupport',
     0x9141 : 'EOS_RequestInnerDevelopStart', 
+    
     0x9143 : 'EOS_RequestInnerDevelopEnd',
     0x9144 : 'EOS_GetGpsLoggingData',
     0x9145 : 'EOS_GetGpsLogCurrentHandle',
@@ -128,25 +131,75 @@
     0x914b : 'EOS_SaveImageRecoveryData',
     0x914c : 'EOS_BLERequest',
     0x914d : 'EOS_DrivePowerZoom',
-
+    0x914e : 'Canon_SendTimeSyncMessage', 
     0x914f : 'EOS_GetIptcData',
     0x9150 : 'EOS_SetIptcData',
-
     0x9151 : 'EOS_InitiateViewfinder',
     0x9152 : 'EOS_TerminateViewfinder',
     0x9153 : 'EOS_GetViewFinderData',
     0x9154 : 'EOS_DoAutoFocus',
     0x9155 : 'EOS_DriveLens',
-    #r6 : 0x9157 0x9158 0x9159 0x915a 0x915b 0x915c 0x915d 0x9160 0x9166 0x916b 0x916c 0x916d 0x916e 0x916f 0x9170 0x9171 0x9172 0x9173 0x9174 0x9177 0x9178 0x9179 0x9180 0x9181 0x9182 0x9183 0x9184 0x9185 0x9186 0x9187 0x9188
+    0x9156 : 'Canon_DepthOfFieldPreview',
+    0x9157 : 'Canon_ClickWB', #r6    
+    0x9158 : 'Canon_Zoom',
+    0x9159 : 'Canon_ZoomPosition',
+    0x915a : 'Canon_SetLiveAFFrame',
+    0x915b : 'Canon_TouchAfPosition',
+    0x915c : 'Canon_SetLvPcFlavoreditMode',
+    0x915d : 'Canon_SetLvPcFlavoreditParam',
+    0x9160 : 'Canon_AFCancel',
+    
+    0x916b : 'Canon_SetImageRecoveryDataEx',
+    0x916c : 'Canon_GetImageRecoveryListEx',
+    0x916d : 'Canon_CompleteAutoSendImages',
+    0x916e : 'Canon_NotifyAutoTransferStatus',
+    0x916f : 'Canon_GetReducedObject',
+    0x9170 : 'Canon_GetObjectInfo64',
+    0x9171 : 'Canon_GetObject64',
+    0x9172 : 'Canon_GetPartialObject64',
+    0x9173 : 'Canon_GetObjectInfoEx64',
+    0x9174 : 'Canon_GetPartialObjectEx64',
+    0x9175 : 'Canon_CreateHandle64',
+    
+    0x9177 : 'Canon_NotifySaveComplete',
+    0x9178 : 'Canon_GetTranscodedBlock',
+    0x9179 : 'Canon_TransferCompleteTranscodedBlock',
+    
+    0x9182 : 'Canon_NotifyEstimateNumberofImport',
+    0x9183 : 'Canon_NotifyNumberofImported',
+    0x9184 : 'Canon_NotifySizeOfPartialDataTransfer',
+    0x9185 : 'Canon_NotifyFinish',
+    0x9186 : 'EOS_GetWftData',
+    0x9187 : 'EOS_SetWftData',
+    0x9188 : 'EOS_ChangeWftSettingNum',
     0x9189 : 'EOS_GetPictureStylePCFlavorParam',
-    #r6 : 0x918a 0x91ae 0x91af 0x91b9 0x91ba 0x91d3 0x91d4 0x91d5 0x91d7 0x91d8 0x91d9 0x91da 0x91db 0x91dc 0x91dd 0x91de 0x91e1 0x91e3 0x91e6 0x91e7 0x91e8 0x91e9 0x91ec 0x91f0 0x91f1
+    0x91b9 : 'Canon_SetFELock',
+    0x91ba : 'EOS_DeleteWftSettingNum',
+    0x91d4 : 'Canon_SendCertData',
+    0x91d7 : 'Canon_DistinctionRTC',
+    0x91d8 : 'Canon_NotifyGpsTimeSyncStatus',
+    0x91e6 : 'Canon_NotifyAdapterStatus',
+    0x91e8 : 'Canon_ceresNotifyNetworkError',
+    0x91e9 : 'Canon_AdapterTransferProgress',
+    0x91ea : 'Canon_ceresRequestAdapterProperty',
+    0x91ec : 'Canon_ceresSEndWpsPinCode',
+    0x91f0 : 'Canon_TransferComplete2',
+    0x91f1 : 'Canon_CancelTransfer2',
+
+    #r6 : 0x918a 0x91ae 0x91af 0x91d3  0x91d5 0x91d9 0x91da 0x91db 0x91dc 0x91dd 0x91de 0x91e1 0x91e3 0x91e6 0x91e7  
     0x91FE : 'EOS_FAPIMessageTX',
     0x91FF : 'EOS_FAPIMessageRX',
-    #and https://github.com/reticulatedpines/magiclantern_simplified/blob/3ae7e828d8489ff399f9d7817bb4dc31e84bd6d6/contrib/ptpcam/ptp-eos-oc.h
-    
+    #and https://github.com/reticulatedpines/magiclantern_simplified/blob/3ae7e828d8489ff399f9d7817bb4dc31e84bd6d6/contrib/ptpcam/ptp-eos-oc.h   
+
     0x9801 : 'MTP_GetObjectPropsSupported',
     0x9802 : 'MTP_GetObjectPropDesc',
-    0x9805 : 'MTP_GetObjectPropsList'
+    0x9803 : 'MTP_GetObjectPropValue',
+    0x9804 : 'MTP_SetObjectPropValue',
+    0x9805 : 'MTP_GetObjectPropsList',
+    
+    0x9999 : 'Canon_CHDK', #see https://chdk.fandom.com/wiki/PTP_Extension
+    0xa1e8 : 'Canon_MagicLantern' #https://www.magiclantern.fm/forum/index.php?topic=24498.0
+
   },
   response_code : {
     0x2000 : 'Undefined',
@@ -208,6 +261,14 @@
       0xd402 : 'DeviceFriendlyName',
       0xd406 : 'SessionInitiatorVersionInfo',
       0xd407 : 'PerceivedDeviceType'
+  },
+  property_types : {
+    2 : 'uint8',
+    4 : 'uint16',
+    6 : 'uint32',
+    0x4002 : 'uint8[]',
+    0x4004 : 'uint16[]',
+    0xffff : 'str'
   },
   Canon_events : {
     0xc189 : 'EOS_PropValueChanged'
