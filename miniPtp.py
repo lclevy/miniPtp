@@ -289,6 +289,10 @@ class ptp:
       data += chunk
     return data
 
+  def get_resp_params( ptp_header, resp ):
+    paramLen = (ptp_header.len-ptp.S_HEADER.size) / Struct('<L').size 
+    return list ( unpack('<%dL' % paramLen, resp[ptp.S_HEADER.size:] ) )
+
   '''
   PTP transaction
   '''
@@ -310,8 +314,13 @@ class ptp:
         assert ptp_header.len >= ptp.S_HEADER.size 
         if ptp_header.type == 3:
           print('Unexpected Response len=0x%02x,' % ptp_header.len, end=' ')
-          ptp.check_rc( ptp_header.code )
-          return {}
+          if ptp_header.code == 0x2001:
+            print('Looks like there is no dataphase')
+            respParams = ptp.get_resp_params( ptp_header, data )
+            return { 'ResponseCode': ptp_header.code, 'Data':bytes(data), 'Parameter':respParams }
+          else:  
+            ptp.check_rc( ptp_header.code )
+            return {}
         else:
           assert ptp_header.code == code
 
@@ -333,9 +342,8 @@ class ptp:
     assert ptp_header.len >= ptp.S_HEADER.size
     assert ptp_header.type == ptp.PACKET_TYPE_RESPONSE
     assert ptp_header.transaction == self._transaction
-    if ptp_header.len >= ptp.S_HEADER.size: #section 4.7.3 in MTP doc
-      paramLen = (ptp_header.len-ptp.S_HEADER.size) / Struct('<L').size #response parameters
-      respParams = list ( unpack('<%dL' % paramLen, response[ptp.S_HEADER.size:] ) )
+    #if ptp_header.len >= ptp.S_HEADER.size: #section 4.7.3 in MTP doc
+    respParams = ptp.get_resp_params( ptp_header, response )
     
     self._transaction += 1
 
@@ -421,7 +429,14 @@ class ptp:
     data = self.transaction( 0x9116, [ 1 ] )['Data'] #Canon_GetEvent
     return ptp.parse_events( data )
    
-
+  def print_operations( ops ): 
+    for op in sorted( ops ):
+      if op in ptp.ptp_dict['operations_codes']:
+        print('0x%x/%s' % (op,ptp.ptp_dict['operations_codes'][op]), end=' ')  
+      else:
+        print('0x%x' % op, end=' ')
+    print()
+    
   def print_obj( h, obj, level ):
     print('%s%08x %08x %08x %04x %d %8d %s' % (level*'  ', h, obj['storage_id'], obj['parent_obj'], obj['object_format'], obj['protection_status'], obj['object_compr_size'],obj['filename']) )
 
@@ -458,12 +473,7 @@ if __name__ == "__main__":
 
   if args.list_operations:
     print('+ operations_supported')
-    for op in sorted(dev_info['operations_supported']):
-      if op in ptp.ptp_dict['operations_codes']:
-        print('0x%x/%s' % (op,ptp.ptp_dict['operations_codes'][op]), end=' ')  
-      else:
-        print('0x%x' % op, end=' ')
-    print()
+    ptp.print_operations( sorted(dev_info['operations_supported']) )
 
   if args.list_properties:
     print('+ device_prop_supported')
