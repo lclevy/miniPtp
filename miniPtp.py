@@ -59,7 +59,7 @@ class usb_tr:
           self.out_ep = ep
       elif ((ep_type == usb.util.ENDPOINT_TYPE_INTR) and (ep_dir == usb.util.ENDPOINT_IN)):
           self.intr_ep = ep
-
+  
 
 class ptp:
   S_HEADER = Struct('<LHHL')
@@ -80,7 +80,6 @@ class ptp:
     ptp_dict = yaml.safe_load(stream)   
   except FileNotFoundError:
       print('file ptp.yml is missing')     
-
   
   def __init__( self, usb=True, vendor=usb_tr.VENDORID_CANON ):
     self._transaction = 0
@@ -272,20 +271,24 @@ class ptp:
   '''
   I/O functions
   '''
-  def write(self, data):
+  def write(self, data, maxLen=0 ):
     total_sent = 0  
     #print(self.device.in_ep.wMaxPacketSize)
+    if maxLen > 0:
+      packetLen = min( maxLen, len(data) )
+    else:
+      packetLen = len(data)
     while total_sent < len(data):
-      sent = self.device.out_ep.write( data[total_sent:] )
+      sent = self.device.out_ep.write( data[total_sent:total_sent+packetLen] ) 
       total_sent += sent
       #print('sent %x' % sent )
     return total_sent
 
   def read(self):
-    chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
+    chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize, timeout=2000 )
     data = chunk
     while len(chunk) == self.device.in_ep.wMaxPacketSize and len(chunk)!=0: #to test = multiple of in_ep.wMaxPacketSize
-      chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize )
+      chunk = self.device.in_ep.read( self.device.in_ep.wMaxPacketSize, timeout=2000 )
       data += chunk
     return data
 
@@ -327,16 +330,16 @@ class ptp:
         assert ptp_header.transaction == self._transaction   
       else:  #senddata      
         packet = pack( '<L', ptp.S_HEADER.size+len(senddata) ) + pack('<H', ptp.PACKET_TYPE_DATA) + pack('<H', code) + pack('<L', self._transaction)
-        l = self.write( packet + senddata )                 
+        l = self.write( packet + senddata )              
     
     #response
-    #try: 
-    response = self.read()
-    '''except usb.core.USBError as e:
+    try: 
+      response = self.read()
+    except usb.core.USBError as e:
       print(e)
-      self._transaction += 1
+      #self._transaction += 1
       return { 'ResponseCode': 0x2000, 'Data':None, 'Parameter':None }
-      '''
+      
     ptp_header = ptp.parse_header( response )
     #print('len=%2x type=%x code=%x trans=%d' %(ptp_header.len, ptp_header.type, ptp_header.code, ptp_header.transaction) )
     assert ptp_header.len >= ptp.S_HEADER.size
